@@ -42,6 +42,7 @@
     --g-mushroom: #9085e9;
     --g-central: #199e70;
     --g-other: #6b6a64;
+    --g-vnc: #d55181;
 
     --radius: 14px;
     --radius-sm: 9px;
@@ -118,7 +119,7 @@
   @media (max-width: 880px){ .cockpit{ grid-template-columns: 1fr; } }
 
   .brain-panel{ padding: 0; overflow: hidden; }
-  .brain-canvas-wrap{ position: relative; width: 100%; aspect-ratio: 6 / 5; background: var(--surface-chart); }
+  .brain-canvas-wrap{ position: relative; width: 100%; aspect-ratio: 6 / 6.4; background: var(--surface-chart); }
   .brain-canvas-wrap canvas{ position:absolute; inset:0; width:100%; height:100%; display:block; }
   .brain-toolbar{
     display:flex; align-items:center; justify-content:space-between; gap: 10px;
@@ -232,27 +233,33 @@
 </style>
 
 <header class="hero">
-  <span class="eyebrow">Connectome-inspired reservoir computing · now trainable</span>
+  <span class="eyebrow">Connectome-inspired reservoir computing · 2026 male CNS model</span>
   <h1>FlyBrain Reservoir</h1>
   <p class="hero-sub">
-    In 2024, FlyWire and an international consortium published the first complete wiring diagram of an
-    adult brain — every neuron and synapse in a male fruit fly, mapped by electron microscopy. Below is a
-    working circuit built in that likeness, and it now does two different jobs on request. Switch to
-    <b>Interpolate a function</b> to see it read a signal back from a few labeled samples in one shot.
-    Or switch to its flagship new task, <b>Ride a bicycle</b>, and watch it actually learn: attempt after
-    attempt, it tunes a small population of descending neurons by trial, error and a reward signal — the
-    rest of the recurrent brain never changes — until it can keep a bicycle upright on its own.
+    In 2024, FlyWire and an international consortium published the first complete wiring diagram of a fly
+    brain. Janelia FlyEM, the MRC Laboratory of Molecular Biology, the University of Cambridge and Google
+    Research have since gone further, completing the <b>male CNS connectome</b> — brain <i>and</i> ventral
+    nerve cord, seamlessly wired together, every neuron reconstructed and every synapse annotated. This
+    update rebuilds the model around that fuller picture: signals no longer stop at an abstract "motor"
+    layer inside the brain. They now descend, the way they really do, from the central complex into a
+    modeled nerve cord, where an actual population of motor neurons does the driving. Switch to
+    <b>Interpolate a function</b> to see the brain read a signal back from a few labeled samples in one
+    shot. Or switch to its flagship task, <b>Ride a bicycle</b>, and watch that descending pathway learn,
+    attempt after attempt, to keep a bicycle upright — trained purely by trial, error and a reward signal,
+    while the rest of the recurrent circuit never changes.
   </p>
   <div class="fact-row">
-    <span class="fact-pill">Real brain: <b>~140,000</b> neurons</span>
-    <span class="fact-pill">Real brain: <b>~50M</b> synapses</span>
+    <span class="fact-pill">Real male CNS: <b>~166,000</b> neurons</span>
+    <span class="fact-pill">Nerve cord alone: <b>~23,000</b> neurons</span>
     <span class="fact-pill">This model: <b><span id="statNeurons">220</span></b> units, <b><span id="statEdges">—</span></b> connections</span>
   </div>
   <p class="disclaimer">
-    This is not the downloaded FlyWire dataset — that requires authenticated access to ~50M individual synapses.
-    What runs below is a statistically faithful stand-in: neuron counts, regional proportions, feedforward
-    sensory pathways and recurrent hubs (central complex, mushroom body) are drawn from the published
-    connectome's own architecture, then generated at a scale a browser can simulate live.
+    This is not the downloaded connectome — that requires authenticated access to the full synapse-level
+    reconstruction (tens of millions of synapses in the nerve cord alone). What runs below is a
+    statistically faithful stand-in: regional neuron proportions, feedforward sensory pathways, recurrent
+    hubs (central complex, mushroom body) and now a distinct nerve-cord module fed by descending neurons
+    are drawn from the published connectomes' own architecture, then generated at a scale a browser can
+    simulate live.
   </p>
 </header>
 
@@ -278,7 +285,7 @@
 <section id="cockpit-section">
   <div class="section-head">
     <h2>The circuit</h2>
-    <p>Each dot is a simulated neuron, clustered into the fly's real neuropils. Edges carry signed synaptic weights — warm neurons are excitatory, cool ones inhibitory, by Dale's law. This part is shared by both tasks.</p>
+    <p>Each dot is a simulated neuron, clustered into the fly's real neuropils — brain regions above, a modeled ventral nerve cord hanging below it. Edges carry signed synaptic weights — warm neurons are excitatory, cool ones inhibitory, by Dale's law. This part is shared by both tasks.</p>
   </div>
   <div class="cockpit">
     <div class="panel brain-panel">
@@ -323,7 +330,7 @@
 <section id="panel-bike">
   <div class="section-head">
     <h2>Task: ride a bicycle</h2>
-    <p>A simplified lean-and-steer bicycle: it falls over unless something actively corrects it. The brain feels its lean angle and lean rate, and its descending neurons output a single steering torque — the only part that learns.</p>
+    <p>A simplified lean-and-steer bicycle: it falls over unless something actively corrects it. The brain feels its lean angle and lean rate in its central complex, sends that command descending into the modeled nerve cord, and a small population of nerve-cord motor neurons outputs a single steering torque — the only synapses that learn.</p>
   </div>
   <div class="bike-grid">
     <div class="panel bike-panel">
@@ -473,8 +480,10 @@
 
 <footer>
   Inspired by the FlyWire / Princeton–Google connectomics milestone mapping the complete male fruit fly brain
-  (<a href="https://research.google/blog/a-connectomics-milestone-mapping-the-complete-male-fruit-fly-brain/" target="_blank" rel="noopener">research.google</a>).
-  All circuitry, dynamics, tasks and learning shown here are a topologically-inspired simulation for exploration, not the published dataset itself.
+  (<a href="https://research.google/blog/a-connectomics-milestone-mapping-the-complete-male-fruit-fly-brain/" target="_blank" rel="noopener">research.google</a>)
+  and by Janelia FlyEM's male CNS connectome, which extended that map to the full brain and ventral nerve cord
+  (<a href="https://www.janelia.org/project-team/flyem/male-cns-connectome" target="_blank" rel="noopener">janelia.org</a>).
+  All circuitry, dynamics, tasks and learning shown here are a topologically-inspired simulation for exploration, not the published datasets themselves.
 </footer>
 
 <script>
@@ -516,21 +525,23 @@
   for(let i=0;i<N_DENSE;i++) xsDense[i] = lerp(DOMAIN[0], DOMAIN[1], i/(N_DENSE-1));
 
   const NEUROPILS = [
-    {id:'OL_L', name:'Optic lobe · L', group:'optic', frac:0.275, sensory:true, cx:-0.60, cy:-0.06, rx:0.24, ry:0.40},
-    {id:'OL_R', name:'Optic lobe · R', group:'optic', frac:0.275, sensory:true, cx:0.60, cy:-0.06, rx:0.24, ry:0.40},
-    {id:'AL',   name:'Antennal lobe', group:'olfactory', frac:0.035, sensory:true, cx:-0.17, cy:0.42, rx:0.10, ry:0.09},
-    {id:'LH',   name:'Lateral horn', group:'olfactory', frac:0.03, sensory:false, cx:-0.34, cy:0.17, rx:0.09, ry:0.09},
-    {id:'MB',   name:'Mushroom body', group:'mushroom', frac:0.045, sensory:false, cx:-0.06, cy:0.02, rx:0.12, ry:0.11},
-    {id:'CX',   name:'Central complex', group:'central', frac:0.05, sensory:false, cx:0.02, cy:0.26, rx:0.11, ry:0.10},
-    {id:'OTHER',name:'Other central brain', group:'other', frac:0.29, sensory:false, cx:0.0, cy:-0.03, rx:0.36, ry:0.24},
+    {id:'OL_L', name:'Optic lobe · L', group:'optic', frac:0.242, sensory:true, cx:-0.60, cy:-0.10, rx:0.24, ry:0.36},
+    {id:'OL_R', name:'Optic lobe · R', group:'optic', frac:0.242, sensory:true, cx:0.60, cy:-0.10, rx:0.24, ry:0.36},
+    {id:'AL',   name:'Antennal lobe', group:'olfactory', frac:0.031, sensory:true, cx:-0.17, cy:0.32, rx:0.10, ry:0.08},
+    {id:'LH',   name:'Lateral horn', group:'olfactory', frac:0.026, sensory:false, cx:-0.34, cy:0.11, rx:0.09, ry:0.08},
+    {id:'MB',   name:'Mushroom body', group:'mushroom', frac:0.040, sensory:false, cx:-0.06, cy:-0.04, rx:0.12, ry:0.10},
+    {id:'CX',   name:'Central complex', group:'central', frac:0.044, sensory:false, cx:0.02, cy:0.17, rx:0.11, ry:0.09},
+    {id:'OTHER',name:'Other central brain', group:'other', frac:0.255, sensory:false, cx:0.0, cy:-0.10, rx:0.36, ry:0.22},
+    {id:'VNC',  name:'Ventral nerve cord', group:'vnc', frac:0.12, sensory:false, cx:0.0, cy:0.62, rx:0.13, ry:0.22},
   ];
-  const GROUP_COLOR = {optic:'var(--g-optic)', olfactory:'var(--g-olfactory)', mushroom:'var(--g-mushroom)', central:'var(--g-central)', other:'var(--g-other)'};
+  const GROUP_COLOR = {optic:'var(--g-optic)', olfactory:'var(--g-olfactory)', mushroom:'var(--g-mushroom)', central:'var(--g-central)', other:'var(--g-other)', vnc:'var(--g-vnc)'};
   const GROUP_P = {
-    optic:    {optic:0.05, olfactory:0.0,  mushroom:0.0,  central:0.0,  other:0.02},
-    olfactory:{optic:0.0,  olfactory:0.08, mushroom:0.12, central:0.01, other:0.05},
-    mushroom: {optic:0.0,  olfactory:0.01, mushroom:0.10, central:0.01, other:0.03},
-    central:  {optic:0.0,  olfactory:0.0,  mushroom:0.01, central:0.25, other:0.05},
-    other:    {optic:0.005,olfactory:0.01, mushroom:0.01, central:0.02, other:0.06},
+    optic:    {optic:0.05, olfactory:0.0,  mushroom:0.0,  central:0.0,  other:0.02, vnc:0.0},
+    olfactory:{optic:0.0,  olfactory:0.08, mushroom:0.12, central:0.01, other:0.05, vnc:0.0},
+    mushroom: {optic:0.0,  olfactory:0.01, mushroom:0.10, central:0.01, other:0.03, vnc:0.0},
+    central:  {optic:0.0,  olfactory:0.0,  mushroom:0.01, central:0.25, other:0.05, vnc:0.10},
+    other:    {optic:0.005,olfactory:0.01, mushroom:0.01, central:0.02, other:0.06, vnc:0.03},
+    vnc:      {optic:0.0,  olfactory:0.0,  mushroom:0.0,  central:0.0,  other:0.015,vnc:0.22},
   };
 
   function buildConnectome(N, seed){
@@ -588,14 +599,14 @@
     net.wIn2 = new Float32Array(n);
     for(let i=0;i<n;i++) if(neurons[i].sensory) net.wIn2[i] = (rngIn2()*1.0+0.5) * (rngIn2()<0.5?-1:1);
 
-    const centralIdx=[], otherIdx=[];
+    const vncIdx=[], otherIdx=[];
     for(let i=0;i<n;i++){
       const g = NEUROPILS[neurons[i].npIndex].group;
-      if(g==='central') centralIdx.push(i); else if(g==='other') otherIdx.push(i);
+      if(g==='vnc') vncIdx.push(i); else if(g==='other') otherIdx.push(i);
     }
     const rngMotor = mulberry32(seed+41);
     for(let i=otherIdx.length-1;i>0;i--){ const j=Math.floor(rngMotor()*(i+1)); const t=otherIdx[i]; otherIdx[i]=otherIdx[j]; otherIdx[j]=t; }
-    net.motorIdx = centralIdx.concat(otherIdx).slice(0, Math.min(28, n));
+    net.motorIdx = vncIdx.concat(otherIdx).slice(0, Math.min(28, n));
 
     return net;
   }
@@ -1016,9 +1027,10 @@
     const groups = [
       {name:'Optic lobes', color:'var(--g-optic)'},
       {name:'Mushroom body', color:'var(--g-mushroom)'},
-      {name:'Central complex (motor)', color:'var(--g-central)'},
+      {name:'Central complex (descending drive)', color:'var(--g-central)'},
       {name:'Antennal / lateral horn', color:'var(--g-olfactory)'},
       {name:'Other central brain', color:'var(--g-other)'},
+      {name:'Nerve cord (motor)', color:'var(--g-vnc)'},
     ];
     el.innerHTML = groups.map(g=>`<span class="legend-item"><span class="swatch" style="background:${g.color}"></span>${g.name}</span>`).join('')
       + `<span class="legend-item"><span class="colorbar"></span>inhibitory ← activity → excitatory</span>`;
