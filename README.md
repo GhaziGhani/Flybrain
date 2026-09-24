@@ -12,29 +12,36 @@ Live artifact: https://claude.ai/artifact/LDCQSH9521hbgqkHoBJRip
 In 2024, [FlyWire and an international consortium published the first complete connectome of an adult
 brain](https://research.google/blog/a-connectomics-milestone-mapping-the-complete-male-fruit-fly-brain/):
 every one of the ~140,000 neurons and ~50 million synapses in a male fruit fly, reconstructed from
-electron microscopy. `index.html` is a single-page, self-contained simulation inspired by that
-milestone — not a download of the actual FlyWire dataset (which requires authenticated access to the
-raw synapse table), but a statistically faithful stand-in built from the same architectural facts:
-regional neuron proportions, feedforward sensory pathways (optic lobes, antennal lobe), and recurrent
-hubs (central complex, mushroom body), generated at a scale a browser can simulate in real time.
+electron microscopy. [Janelia FlyEM, the MRC Laboratory of Molecular Biology, the University of Cambridge
+and Google Research have since extended that map into the male CNS
+connectome](https://www.janelia.org/project-team/flyem/male-cns-connectome) — the brain *and* the ventral
+nerve cord, seamlessly wired together: roughly 166,000 neurons in total, about 23,000 of them in the nerve
+cord alone. `index.html` is a single-page, self-contained simulation inspired by both milestones — not a
+download of either actual dataset (which requires authenticated access to tens of millions of individual
+synapses), but a statistically faithful stand-in built from their published architecture: regional neuron
+proportions, feedforward sensory pathways (optic lobes, antennal lobe), recurrent hubs (central complex,
+mushroom body), and a distinct nerve-cord module fed by descending neurons — generated at a scale a
+browser can simulate in real time.
 
 ## The idea
 
 The generated connectome is used as the fixed, signed (Dale's-law) recurrent weight matrix of an
 [echo-state-network-style reservoir computer](https://en.wikipedia.org/wiki/Reservoir_computing). Sensory
 input is injected into the optic lobes and antennal lobe and left to ripple through the recurrent
-circuitry; everything downstream of that fixed reservoir is read out by a small, trainable population of
-"descending" neurons drawn mostly from the central complex — the fly's real locomotor/steering hub.
+circuitry. Central-complex and other central-brain neurons — the fly's real locomotor/steering hub —
+project descending into a modeled ventral nerve cord, and it's that nerve cord's own small, trainable
+population of motor neurons that produces the final output. Only those nerve-cord synapses ever change;
+everything upstream of them stays fixed.
 
 The app currently offers two tasks built on that same substrate:
 
 - **Ride a bicycle** (the flagship task, and the one that learns *over time*): a simplified lean-and-steer
   bicycle model that falls over unless something actively corrects it. The brain feels the lean angle and
-  lean rate and outputs a single steering torque. Its descending-neuron readout weights are trained across
-  many attempts with an OpenAI-ES-style evolution strategy — each generation perturbs the weights several
-  ways, runs one episode per perturbation, and moves the weights toward whichever variants survived
-  longest and stayed most upright. A live learning-curve chart plots survival time per generation so you
-  can watch it improve from a few seconds to a full, uncrashed run.
+  lean rate and outputs a single steering torque via its nerve-cord motor neurons. Those readout weights
+  are trained across many attempts with an OpenAI-ES-style evolution strategy — each generation perturbs
+  the weights several ways, runs one episode per perturbation, and moves the weights toward whichever
+  variants survived longest and stayed most upright. A live learning-curve chart plots survival time per
+  generation so you can watch it improve from a few seconds to a full, uncrashed run.
 - **Interpolate a function**: the original task. A scalar input — think of it as a position swept across
   the fly's compound eye — drives the reservoir once, and a ridge-regression readout is trained on a
   handful of labeled, noisy moments from that sweep to reconstruct the target function everywhere else.
