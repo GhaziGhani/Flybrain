@@ -1,0 +1,1233 @@
+<title>FlyBrain Reservoir</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    color-scheme: dark;
+    --bg: #0d0d0d;
+    --panel: #15161b;
+    --panel-2: #1b1c22;
+    --surface-chart: #1a1a19;
+    --ink: #ffffff;
+    --ink-2: #c3c2b7;
+    --ink-muted: #898781;
+    --grid: #2c2c2a;
+    --axis: #454541;
+    --border: rgba(255,255,255,0.10);
+
+    --accent: #d95926;
+    --accent-soft: rgba(217,89,38,0.16);
+    --accent-2: #3987e5;
+
+    --s-reservoir: #d95926;
+    --s-linear: #3987e5;
+    --s-spline: #199e70;
+    --s-poly: #e66767;
+    --s-rbf: #9085e9;
+    --s-knn: #c98500;
+    --true-line: #f4f2ec;
+
+    --div-neg: #3987e5;
+    --div-mid: #454541;
+    --div-pos: #e66767;
+
+    --good: #0ca30c;
+
+    --g-optic: #3987e5;
+    --g-olfactory: #c98500;
+    --g-mushroom: #9085e9;
+    --g-central: #199e70;
+    --g-other: #6b6a64;
+
+    --radius: 14px;
+    --radius-sm: 9px;
+  }
+
+  *{ box-sizing: border-box; }
+  body{
+    background: var(--bg);
+    color: var(--ink-2);
+    font-family: "IBM Plex Sans", system-ui, sans-serif;
+    padding-inline: 20px;
+    max-width: 1180px;
+    margin: 0 auto;
+    line-height: 1.5;
+  }
+  h1,h2,h3{ color: var(--ink); font-family: "Fraunces", Georgia, serif; font-weight: 600; text-wrap: balance; margin: 0; }
+  p{ margin: 0; }
+  a{ color: var(--accent-2); }
+
+  .eyebrow{
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11.5px;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  header.hero{
+    padding-block: 40px 28px;
+    display: flex; flex-direction: column; gap: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  header.hero h1{ font-size: clamp(28px, 5vw, 44px); }
+  .hero-sub{ max-width: 760px; font-size: 15.5px; color: var(--ink-2); }
+  .fact-row{ display:flex; flex-wrap:wrap; gap:10px; margin-top: 6px; }
+  .fact-pill{
+    font-family:"IBM Plex Mono", monospace; font-size: 11.5px; color: var(--ink-2);
+    border: 1px solid var(--border); border-radius: 999px; padding: 5px 12px;
+    background: var(--panel);
+  }
+  .fact-pill b{ color: var(--ink); font-weight: 600; }
+  .disclaimer{
+    font-size: 12.5px; color: var(--ink-muted); max-width: 760px;
+    border-left: 2px solid var(--accent-soft); padding-left: 12px;
+  }
+
+  section{ padding-block: 32px; border-bottom: 1px solid var(--border); }
+  section:last-of-type{ border-bottom: none; }
+  .section-head{ display:flex; flex-direction:column; gap:4px; margin-bottom: 18px; }
+  .section-head h2{ font-size: 24px; }
+  .section-head p{ color: var(--ink-muted); font-size: 13.5px; max-width: 640px; }
+
+  .panel{
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+  }
+
+  .cockpit{ display: grid; grid-template-columns: minmax(0,1.6fr) minmax(280px,1fr); gap: 18px; align-items: start; }
+  @media (max-width: 880px){ .cockpit{ grid-template-columns: 1fr; } }
+
+  .brain-panel{ padding: 0; overflow: hidden; }
+  .brain-canvas-wrap{ position: relative; width: 100%; aspect-ratio: 6 / 5; background: var(--surface-chart); }
+  .brain-canvas-wrap canvas{ position:absolute; inset:0; width:100%; height:100%; display:block; }
+  .brain-toolbar{
+    display:flex; align-items:center; justify-content:space-between; gap: 10px;
+    padding: 10px 14px; border-top: 1px solid var(--border);
+    font-family:"IBM Plex Mono",monospace; font-size: 12px; color: var(--ink-muted);
+  }
+  .brain-toolbar .left{ display:flex; align-items:center; gap:10px; }
+  .iconbtn{
+    width: 30px; height:30px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--panel-2); color: var(--ink); cursor:pointer; display:flex; align-items:center; justify-content:center;
+    font-size: 13px;
+  }
+  .iconbtn:hover{ border-color: var(--accent-2); }
+  input[type="range"]{ accent-color: var(--accent-2); width: 100%; }
+
+  .legend-strip{ display:flex; flex-wrap:wrap; gap: 14px; padding: 12px 14px; border-top: 1px solid var(--border); }
+  .legend-item{ display:flex; align-items:center; gap:6px; font-size: 12px; color: var(--ink-2); }
+  .swatch{ width:9px; height:9px; border-radius: 50%; display:inline-block; }
+  .colorbar{ height: 8px; width: 96px; border-radius: 4px; background: linear-gradient(90deg, var(--div-neg), var(--div-mid), var(--div-pos)); }
+
+  .control-deck{ display:flex; flex-direction:column; gap: 14px; }
+  .field{ display:flex; flex-direction:column; gap: 5px; }
+  .field-row{ display:flex; align-items:baseline; justify-content:space-between; }
+  .field-row label{ font-size: 12.5px; color: var(--ink-2); }
+  .field-row .val{ font-family:"IBM Plex Mono",monospace; font-size:12px; color: var(--accent); }
+  select{
+    width:100%; padding: 8px 10px; border-radius: var(--radius-sm); border:1px solid var(--border);
+    background: var(--panel-2); color: var(--ink); font-family:"IBM Plex Sans"; font-size: 13px;
+  }
+  .btn{
+    font-family:"IBM Plex Sans"; font-weight:600; font-size: 13.5px; padding: 10px 16px;
+    border-radius: var(--radius-sm); border: 1px solid transparent; cursor: pointer;
+  }
+  .btn-primary{ background: var(--accent); color: #1a0a03; }
+  .btn-primary:hover{ filter: brightness(1.08); }
+  .btn-ghost{ background: transparent; border-color: var(--border); color: var(--ink); }
+  .btn-ghost:hover{ border-color: var(--accent-2); color: var(--accent-2); }
+  .btn-row{ display:flex; gap: 10px; flex-wrap: wrap; }
+
+  .draw-wrap{ display:none; flex-direction: column; gap: 6px; }
+  .draw-wrap.active{ display:flex; }
+  #drawCanvas{ width:100%; height: 120px; border-radius: var(--radius-sm); border:1px dashed var(--border); background: var(--surface-chart); touch-action:none; cursor:crosshair; }
+
+  .results-wrap{ display:flex; flex-direction:column; gap: 16px; }
+  .chart-panel{ padding: 14px; }
+  .chart-canvas-wrap{ position:relative; width:100%; height: 320px; }
+  .chart-canvas-wrap canvas{ position:absolute; inset:0; width:100%; height:100%; }
+  .tooltip{
+    position:absolute; pointer-events:none; background: var(--panel-2); border:1px solid var(--border);
+    border-radius: 8px; padding: 8px 10px; font-family:"IBM Plex Mono",monospace; font-size:11.5px;
+    color: var(--ink-2); white-space: nowrap; opacity:0; transition: opacity .1s; z-index: 5;
+  }
+  .tooltip b{ color: var(--ink); }
+  .tooltip .row{ display:flex; gap:8px; align-items:center; }
+  .tooltip .dot{ width:7px; height:7px; border-radius:50%; display:inline-block; }
+
+  .chart-legend{ display:flex; flex-wrap:wrap; gap: 10px 16px; margin-top: 10px; }
+  .chip{
+    display:flex; align-items:center; gap:7px; font-size:12.5px; color: var(--ink-2);
+    border:1px solid var(--border); border-radius:999px; padding: 5px 10px 5px 8px; cursor:pointer;
+    user-select:none; background: var(--panel-2);
+  }
+  .chip input{ display:none; }
+  .chip .swatch{ width:10px; height:10px; border-radius:3px; }
+  .chip.line .swatch{ border-radius: 2px; }
+  .chip.off{ opacity: .38; }
+
+  table.metrics{ width:100%; border-collapse: collapse; font-size: 13px; }
+  table.metrics th, table.metrics td{ text-align:left; padding: 9px 10px; border-bottom: 1px solid var(--border); }
+  table.metrics th{ color: var(--ink-muted); font-weight:500; font-size:11.5px; text-transform:uppercase; letter-spacing:.06em; }
+  table.metrics td.num{ font-family:"IBM Plex Mono",monospace; text-align:right; font-variant-numeric: tabular-nums; }
+  table.metrics th.num{ text-align:right; }
+  table.metrics tr.best td{ background: rgba(12,163,12,0.08); }
+  .rank-badge{
+    display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:50%;
+    background: var(--panel-2); border:1px solid var(--border); font-family:"IBM Plex Mono",monospace; font-size:10.5px; color: var(--ink-2);
+  }
+  tr.best .rank-badge{ background: var(--good); border-color: var(--good); color:#04220a; }
+  .method-name{ display:flex; align-items:center; gap:8px; color: var(--ink); }
+
+  .caption{ font-size: 13px; color: var(--ink-muted); max-width: 740px; }
+
+  .chaos-grid{ display:grid; grid-template-columns: 1.4fr 1fr; gap: 18px; align-items:start; }
+  @media (max-width: 880px){ .chaos-grid{ grid-template-columns:1fr; } }
+  .chaos-stat{ display:flex; flex-direction:column; gap:2px; }
+  .chaos-stat .label{ font-size:11.5px; color: var(--ink-muted); text-transform:uppercase; letter-spacing:.06em; }
+  .chaos-stat .value{ font-family:"IBM Plex Mono",monospace; font-size: 20px; color: var(--ink); }
+  .stat-row{ display:flex; gap: 22px; flex-wrap:wrap; margin-top: 10px; }
+
+  footer{ padding-block: 30px 50px; font-size:12px; color: var(--ink-muted); }
+  footer a{ color: var(--ink-muted); text-decoration underline; }
+
+  ::selection{ background: var(--accent-soft); }
+</style>
+
+<header class="hero">
+  <span class="eyebrow">Connectome-inspired reservoir computing</span>
+  <h1>FlyBrain Reservoir</h1>
+  <p class="hero-sub">
+    In 2024, FlyWire and an international consortium published the first complete wiring diagram of an adult
+    brain — every neuron and synapse in a male fruit fly, mapped by electron microscopy. Below is a working
+    circuit built in that likeness: a recurrent network shaped like the fly's own neuropils, used as a living
+    memory that can be taught, from only a handful of noisy samples, to reconstruct an entire function it has
+    never fully seen. Sweep a signal across its "eyes," watch the activity ripple through mushroom body and
+    central complex, and see how its guess stacks up against classic interpolation methods.
+  </p>
+  <div class="fact-row">
+    <span class="fact-pill">Real brain: <b>~140,000</b> neurons</span>
+    <span class="fact-pill">Real brain: <b>~50M</b> synapses</span>
+    <span class="fact-pill">This model: <b><span id="statNeurons">220</span></b> units, <b><span id="statEdges">—</span></b> connections</span>
+  </div>
+  <p class="disclaimer">
+    This is not the downloaded FlyWire dataset — that requires authenticated access to ~50M individual synapses.
+    What runs below is a statistically faithful stand-in: neuron counts, regional proportions, feedforward
+    sensory pathways and recurrent hubs (central complex, mushroom body) are drawn from the published
+    connectome's own architecture, then generated at a scale a browser can simulate live.
+  </p>
+</header>
+
+<section id="cockpit-section">
+  <div class="section-head">
+    <h2>The circuit</h2>
+    <p>Each dot is a simulated neuron, clustered into the fly's real neuropils. Edges carry signed synaptic weights — warm neurons are excitatory, cool ones inhibitory, by Dale's law.</p>
+  </div>
+  <div class="cockpit">
+    <div class="panel brain-panel">
+      <div class="brain-canvas-wrap">
+        <canvas id="brainCanvas"></canvas>
+      </div>
+      <div class="legend-strip" id="brainLegend"></div>
+      <div class="brain-toolbar">
+        <div class="left">
+          <button class="iconbtn" id="playBtn" title="Play / pause sweep">▶</button>
+          <span id="playheadReadout">x = 0.00</span>
+        </div>
+        <input type="range" id="scrub" min="0" max="359" value="0" style="max-width:280px;">
+      </div>
+    </div>
+
+    <div class="control-deck panel">
+      <div class="field">
+        <div class="field-row"><label>Target function</label></div>
+        <select id="funcSelect">
+          <option value="sine">Sine wave</option>
+          <option value="runge">Runge bump (interpolation trap)</option>
+          <option value="gauss">Gaussian pulse</option>
+          <option value="damped">Damped oscillation</option>
+          <option value="square">Square wave</option>
+          <option value="saw">Sawtooth</option>
+          <option value="custom">Draw your own…</option>
+        </select>
+      </div>
+      <div class="draw-wrap" id="drawWrap">
+        <canvas id="drawCanvas"></canvas>
+        <div class="btn-row"><button class="btn btn-ghost" id="clearDrawBtn" style="padding:6px 12px;font-size:12px;">Clear drawing</button></div>
+      </div>
+
+      <div class="field">
+        <div class="field-row"><label>Brain size (neurons)</label><span class="val" id="vN">220</span></div>
+        <input type="range" id="sN" min="80" max="320" step="10" value="220">
+      </div>
+      <div class="field">
+        <div class="field-row"><label>Spectral radius ρ</label><span class="val" id="vRho">1.00</span></div>
+        <input type="range" id="sRho" min="0.2" max="1.6" step="0.01" value="1.0">
+      </div>
+      <div class="field">
+        <div class="field-row"><label>Leak rate</label><span class="val" id="vLeak">0.08</span></div>
+        <input type="range" id="sLeak" min="0.02" max="1" step="0.01" value="0.08">
+      </div>
+      <div class="field">
+        <div class="field-row"><label>Input gain</label><span class="val" id="vGain">1.2</span></div>
+        <input type="range" id="sGain" min="0.2" max="4" step="0.1" value="1.2">
+      </div>
+      <div class="field">
+        <div class="field-row"><label>Training samples</label><span class="val" id="vTrain">16</span></div>
+        <input type="range" id="sTrain" min="6" max="40" step="1" value="16">
+      </div>
+      <div class="field">
+        <div class="field-row"><label>Observation noise</label><span class="val" id="vNoise">0.06</span></div>
+        <input type="range" id="sNoise" min="0" max="0.3" step="0.01" value="0.06">
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" id="runBtn">Run simulation</button>
+        <button class="btn btn-ghost" id="randBtn">Randomize brain</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="results-section">
+  <div class="section-head">
+    <h2>Reading the function back</h2>
+    <p>Every method sees the same sparse, noisy samples (dots). The dashed line is the true function — held out, used only to grade the reconstructions.</p>
+  </div>
+  <div class="results-wrap">
+    <div class="panel chart-panel">
+      <div class="chart-canvas-wrap">
+        <canvas id="resultsChart"></canvas>
+        <div class="tooltip" id="chartTooltip"></div>
+      </div>
+      <div class="chart-legend" id="resultsLegend"></div>
+    </div>
+    <div class="panel">
+      <table class="metrics" id="metricsTable">
+        <thead><tr><th></th><th>Method</th><th class="num">RMSE</th><th class="num">MAE</th><th class="num">R²</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <p class="caption" id="resultsCaption"></p>
+  </div>
+</section>
+
+<section id="chaos-section">
+  <div class="section-head">
+    <h2>Explore: the edge of chaos</h2>
+    <p>Reservoir computing has a signature result — recurrent networks work best balanced right at the boundary between order and chaos. Rescale this same brain's connections across a range of spectral radii and see where it peaks.</p>
+  </div>
+  <div class="chaos-grid">
+    <div class="panel chart-panel">
+      <div class="chart-canvas-wrap" style="height:260px;">
+        <canvas id="chaosChart"></canvas>
+      </div>
+    </div>
+    <div class="panel">
+      <p class="caption">This scan fixes the leak rate high (fast, non-leaky updates) so the transition shows clearly. Too low a spectral radius and the network's memory fades before it can hold useful context; push it too high and activity turns chaotic and washes out the signal. The sweet spot in between — the "edge of chaos" — is where biological circuits are hypothesized to operate too. Your own leak-rate slider above shows the other side of this: a slow, heavily-damped brain stays stable even at high ρ, which is part of why the low-leak default fits so well.</p>
+      <div class="stat-row">
+        <div class="chaos-stat"><span class="label">Best ρ found</span><span class="value" id="chaosBestRho">—</span></div>
+        <div class="chaos-stat"><span class="label">Best RMSE</span><span class="value" id="chaosBestRmse">—</span></div>
+      </div>
+      <div class="btn-row" style="margin-top:14px;">
+        <button class="btn btn-primary" id="chaosBtn">Scan edge of chaos</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  Inspired by the FlyWire / Princeton–Google connectomics milestone mapping the complete male fruit fly brain
+  (<a href="https://research.google/blog/a-connectomics-milestone-mapping-the-complete-male-fruit-fly-brain/" target="_blank" rel="noopener">research.google</a>).
+  All circuitry, dynamics and comparisons on this page are a topologically-inspired simulation for exploration, not the published dataset itself.
+</footer>
+
+<script>
+(function(){
+  "use strict";
+
+  function lerp(a,b,t){ return a+(b-a)*t; }
+  function clamp(v,lo,hi){ return Math.max(lo, Math.min(hi, v)); }
+  function mulberry32(seed){
+    return function(){
+      seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function gaussian(rng){
+    let u=0,v=0;
+    while(u===0) u=rng();
+    while(v===0) v=rng();
+    return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+  }
+  function fmt(v, digits){
+    digits = digits==null?3:digits;
+    if(!Number.isFinite(v)) return "diverged";
+    const av=Math.abs(v);
+    if(av!==0 && (av<0.001||av>=100000)) return v.toExponential(2);
+    return v.toFixed(digits);
+  }
+  function norm2(v){ let s=0; for(let i=0;i<v.length;i++) s+=v[i]*v[i]; return Math.sqrt(s); }
+
+  const N_DENSE = 360;
+  const DOMAIN = [-1,1];
+  const xsDense = new Array(N_DENSE);
+  for(let i=0;i<N_DENSE;i++) xsDense[i] = lerp(DOMAIN[0], DOMAIN[1], i/(N_DENSE-1));
+
+  const NEUROPILS = [
+    {id:'OL_L', name:'Optic lobe · L', group:'optic', frac:0.275, sensory:true, cx:-0.60, cy:-0.06, rx:0.24, ry:0.40},
+    {id:'OL_R', name:'Optic lobe · R', group:'optic', frac:0.275, sensory:true, cx:0.60, cy:-0.06, rx:0.24, ry:0.40},
+    {id:'AL',   name:'Antennal lobe', group:'olfactory', frac:0.035, sensory:true, cx:-0.17, cy:0.42, rx:0.10, ry:0.09},
+    {id:'LH',   name:'Lateral horn', group:'olfactory', frac:0.03, sensory:false, cx:-0.34, cy:0.17, rx:0.09, ry:0.09},
+    {id:'MB',   name:'Mushroom body', group:'mushroom', frac:0.045, sensory:false, cx:-0.06, cy:0.02, rx:0.12, ry:0.11},
+    {id:'CX',   name:'Central complex', group:'central', frac:0.05, sensory:false, cx:0.02, cy:0.26, rx:0.11, ry:0.10},
+    {id:'OTHER',name:'Other central brain', group:'other', frac:0.29, sensory:false, cx:0.0, cy:-0.03, rx:0.36, ry:0.24},
+  ];
+  const GROUP_COLOR = {optic:'var(--g-optic)', olfactory:'var(--g-olfactory)', mushroom:'var(--g-mushroom)', central:'var(--g-central)', other:'var(--g-other)'};
+  const GROUP_P = {
+    optic:    {optic:0.05, olfactory:0.0,  mushroom:0.0,  central:0.0,  other:0.02},
+    olfactory:{optic:0.0,  olfactory:0.08, mushroom:0.12, central:0.01, other:0.05},
+    mushroom: {optic:0.0,  olfactory:0.01, mushroom:0.10, central:0.01, other:0.03},
+    central:  {optic:0.0,  olfactory:0.0,  mushroom:0.01, central:0.25, other:0.05},
+    other:    {optic:0.005,olfactory:0.01, mushroom:0.01, central:0.02, other:0.06},
+  };
+
+  function buildConnectome(N, seed){
+    const rng = mulberry32(seed);
+    const raw = NEUROPILS.map(np=>np.frac*N);
+    const counts = raw.map(Math.floor);
+    let used = counts.reduce((a,b)=>a+b,0);
+    let rem = N-used;
+    const order = NEUROPILS.map((_,i)=>i).sort((a,b)=>(raw[b]%1)-(raw[a]%1));
+    for(let k=0;k<rem;k++) counts[order[k%order.length]]++;
+
+    const neurons = [];
+    NEUROPILS.forEach((np,ni)=>{
+      for(let k=0;k<counts[ni];k++){
+        const r = Math.sqrt(rng());
+        const theta = rng()*Math.PI*2;
+        const x = np.cx + Math.cos(theta)*r*np.rx;
+        const y = np.cy + Math.sin(theta)*r*np.ry;
+        const sign = rng()<0.75 ? 1 : -1;
+        neurons.push({npIndex:ni, x, y, sign, sensory:np.sensory});
+      }
+    });
+    const n = neurons.length;
+    const src=[], dst=[], w=[];
+    for(let i=0;i<n;i++){
+      const gi = NEUROPILS[neurons[i].npIndex].group;
+      const npi = neurons[i].npIndex;
+      for(let j=0;j<n;j++){
+        if(i===j) continue;
+        const gj = NEUROPILS[neurons[j].npIndex].group;
+        let p = GROUP_P[gi][gj] || 0;
+        if(npi===neurons[j].npIndex) p*=2.5;
+        else if(gi==='optic' && gj==='optic') p*=0.15;
+        if(p<=0) continue;
+        if(rng()<p){
+          const mag = Math.exp(-1 + gaussian(rng)*0.6);
+          src.push(i); dst.push(j); w.push(mag*neurons[i].sign);
+        }
+      }
+    }
+    const net = {
+      N:n, neurons,
+      src:new Int32Array(src), dst:new Int32Array(dst),
+      baseW:new Float32Array(w),
+    };
+    const rho0 = estimateSpectralRadius(net.src, net.dst, net.baseW, n, 60, seed+11);
+    const s = rho0>1e-6 ? 1/rho0 : 1;
+    for(let e=0;e<net.baseW.length;e++) net.baseW[e]*=s;
+    const rngIn = mulberry32(seed+7);
+    net.wIn = new Float32Array(n);
+    for(let i=0;i<n;i++){
+      if(neurons[i].sensory) net.wIn[i] = (rngIn()*1.0+0.5) * (rngIn()<0.5?-1:1);
+    }
+    return net;
+  }
+
+  function matvecSparse(src,dst,w,n,x,out){
+    out.fill(0);
+    for(let e=0;e<src.length;e++) out[dst[e]] += w[e]*x[src[e]];
+    return out;
+  }
+  function estimateSpectralRadius(src,dst,w,n,iters,seed){
+    const rng = mulberry32(seed);
+    let v = new Float32Array(n);
+    for(let i=0;i<n;i++) v[i]=rng()*2-1;
+    let nrm = norm2(v)||1;
+    for(let i=0;i<n;i++) v[i]/=nrm;
+    const out = new Float32Array(n);
+    let lambda = 1;
+    for(let k=0;k<iters;k++){
+      matvecSparse(src,dst,w,n,v,out);
+      lambda = norm2(out);
+      if(lambda<1e-9) return 0;
+      for(let i=0;i<n;i++) v[i]=out[i]/lambda;
+    }
+    return lambda;
+  }
+
+  function runSweep(net, xs, rho, leak, inputGain, noiseStd, seed){
+    const n = net.N, T = xs.length;
+    const w = new Float32Array(net.baseW.length);
+    for(let e=0;e<w.length;e++) w[e]=net.baseW[e]*rho;
+    const rngNoise = mulberry32((seed^0x9e3779b9)>>>0);
+    let state = new Float32Array(n);
+    const pre = new Float32Array(n);
+    const states = new Array(T);
+    for(let t=0;t<T;t++){
+      matvecSparse(net.src, net.dst, w, n, state, pre);
+      const u = xs[t];
+      for(let i=0;i<n;i++){
+        let p = pre[i] + net.wIn[i]*u*inputGain;
+        if(noiseStd>0) p += gaussian(rngNoise)*noiseStd;
+        state[i] = (1-leak)*state[i] + leak*Math.tanh(p);
+      }
+      states[t] = state.slice();
+    }
+    return states;
+  }
+
+  function dot(a,b){ let s=0; for(let i=0;i<a.length;i++) s+=a[i]*b[i]; return s; }
+  function solveLinearSystem(A,b){
+    const n=b.length;
+    const M = A.map((row,i)=>row.slice().concat([b[i]]));
+    for(let col=0; col<n; col++){
+      let piv=col;
+      for(let r=col+1;r<n;r++) if(Math.abs(M[r][col])>Math.abs(M[piv][col])) piv=r;
+      if(piv!==col){ const tmp=M[col]; M[col]=M[piv]; M[piv]=tmp; }
+      const pivVal = M[col][col] || 1e-9;
+      for(let r=0;r<n;r++){
+        if(r===col) continue;
+        const factor = M[r][col]/pivVal;
+        if(factor===0) continue;
+        for(let c=col;c<=n;c++) M[r][c]-=factor*M[col][c];
+      }
+    }
+    const x=new Array(n);
+    for(let i=0;i<n;i++) x[i]=M[i][n]/(M[i][i]||1e-9);
+    return x;
+  }
+  function fitReservoirReadout(statesAll, trainIdx, yTrain, lambda){
+    const m = trainIdx.length;
+    const Xtr = trainIdx.map(i=>statesAll[i]);
+    const K = [];
+    for(let i=0;i<m;i++){
+      K[i]=[];
+      for(let j=0;j<m;j++) K[i][j]=dot(Xtr[i],Xtr[j]) + (i===j?lambda:0);
+    }
+    const alpha = solveLinearSystem(K, yTrain);
+    return {Xtr, alpha};
+  }
+  function predictReservoir(model, statesQuery){
+    return statesQuery.map(xq=>{
+      let s=0;
+      for(let j=0;j<model.Xtr.length;j++) s += dot(xq, model.Xtr[j])*model.alpha[j];
+      return s;
+    });
+  }
+
+  function linearInterp(xs, ys){
+    return function(xq){
+      if(xq<=xs[0]) return ys[0];
+      if(xq>=xs[xs.length-1]) return ys[ys.length-1];
+      let lo=0, hi=xs.length-1;
+      while(hi-lo>1){ const mid=(lo+hi)>>1; if(xs[mid]<=xq) lo=mid; else hi=mid; }
+      const t=(xq-xs[lo])/(xs[hi]-xs[lo]);
+      return lerp(ys[lo], ys[hi], t);
+    };
+  }
+  function naturalCubicSpline(xs, ys){
+    const n = xs.length;
+    if(n<3) return linearInterp(xs,ys);
+    const h = new Array(n-1);
+    for(let i=0;i<n-1;i++) h[i]=xs[i+1]-xs[i];
+    const alpha = new Array(n).fill(0);
+    for(let i=1;i<n-1;i++) alpha[i] = (3/h[i])*(ys[i+1]-ys[i]) - (3/h[i-1])*(ys[i]-ys[i-1]);
+    const l=new Array(n).fill(1), mu=new Array(n).fill(0), z=new Array(n).fill(0);
+    for(let i=1;i<n-1;i++){
+      l[i] = 2*(xs[i+1]-xs[i-1]) - h[i-1]*mu[i-1];
+      mu[i] = h[i]/l[i];
+      z[i] = (alpha[i]-h[i-1]*z[i-1])/l[i];
+    }
+    const c=new Array(n).fill(0), b=new Array(n).fill(0), d=new Array(n).fill(0);
+    for(let j=n-2;j>=0;j--){
+      c[j] = z[j]-mu[j]*c[j+1];
+      b[j] = (ys[j+1]-ys[j])/h[j] - h[j]*(c[j+1]+2*c[j])/3;
+      d[j] = (c[j+1]-c[j])/(3*h[j]);
+    }
+    return function(xq){
+      const cq = clamp(xq, xs[0], xs[n-1]);
+      let lo=0, hi=n-1;
+      while(hi-lo>1){ const mid=(lo+hi)>>1; if(xs[mid]<=cq) lo=mid; else hi=mid; }
+      const dx = cq - xs[lo];
+      return ys[lo] + b[lo]*dx + c[lo]*dx*dx + d[lo]*dx*dx*dx;
+    };
+  }
+  function lagrangeInterp(xs, ys){
+    const n = xs.length;
+    return function(xq){
+      let total=0;
+      for(let i=0;i<n;i++){
+        let term=ys[i];
+        for(let j=0;j<n;j++){
+          if(j===i) continue;
+          term *= (xq-xs[j])/(xs[i]-xs[j]);
+        }
+        total+=term;
+      }
+      return total;
+    };
+  }
+  function rbfFit(xs, ys, sigma, lambda){
+    const n=xs.length;
+    const K=[];
+    for(let i=0;i<n;i++){ K[i]=[]; for(let j=0;j<n;j++){ const d=xs[i]-xs[j]; K[i][j]=Math.exp(-(d*d)/(2*sigma*sigma)) + (i===j?lambda:0); } }
+    const w = solveLinearSystem(K, ys);
+    return function(xq){
+      let s=0;
+      for(let j=0;j<n;j++){ const d=xq-xs[j]; s += w[j]*Math.exp(-(d*d)/(2*sigma*sigma)); }
+      return s;
+    };
+  }
+  function knnPredictor(xs, ys, k){
+    const idx = xs.map((x,i)=>i);
+    return function(xq){
+      const dists = idx.map(i=>({i, d:Math.abs(xs[i]-xq)})).sort((a,b)=>a.d-b.d).slice(0,k);
+      let wsum=0, ysum=0;
+      dists.forEach(({i,d})=>{ const wgt=1/(d+1e-3); wsum+=wgt; ysum+=wgt*ys[i]; });
+      return ysum/wsum;
+    };
+  }
+
+  function metrics(yTrue, yPred){
+    let finite=true;
+    for(let i=0;i<yPred.length;i++) if(!Number.isFinite(yPred[i])) { finite=false; break; }
+    if(!finite) return {rmse:Infinity, mae:Infinity, r2:-Infinity};
+    let mean=0; for(const y of yTrue) mean+=y; mean/=yTrue.length;
+    let sse=0, sae=0, sst=0;
+    for(let i=0;i<yTrue.length;i++){
+      const e = yPred[i]-yTrue[i];
+      sse+=e*e; sae+=Math.abs(e);
+      sst+=(yTrue[i]-mean)*(yTrue[i]-mean);
+    }
+    const rmse=Math.sqrt(sse/yTrue.length);
+    const mae=sae/yTrue.length;
+    const r2 = sst>1e-9 ? 1-sse/sst : 1;
+    return {rmse, mae, r2};
+  }
+  function stratifiedIndices(nDense, nTrain, rng){
+    const idxs=[];
+    const binSize = nDense/nTrain;
+    for(let b=0;b<nTrain;b++){
+      const lo=Math.floor(b*binSize), hi=Math.max(lo, Math.floor((b+1)*binSize)-1);
+      const pick = lo + Math.floor(rng()*(hi-lo+1));
+      idxs.push(clamp(pick,0,nDense-1));
+    }
+    return Array.from(new Set(idxs)).sort((a,b)=>a-b);
+  }
+
+  const TARGET_FUNCS = {
+    sine:   x=> 0.85*Math.sin(2*Math.PI*1.4*x),
+    runge:  x=> 1/(1+25*x*x),
+    gauss:  x=> Math.exp(-(x*x)/(2*0.05)),
+    damped: x=> Math.exp(-1.6*x*x)*Math.cos(9*x),
+    square: x=> { const s=Math.sin(2*Math.PI*1.1*x); return (s===0?1:Math.sign(s))*0.75; },
+    saw:    x=> { const t=(x+1)/2*3; return (2*(t-Math.floor(t+0.5)))*0.75; },
+  };
+
+  let customPoints = [];
+  let customDense = null;
+  function buildCustomDense(){
+    if(customPoints.length<2){ customDense=null; return; }
+    const pts = customPoints.slice().sort((a,b)=>a.x-b.x);
+    const dense = new Array(N_DENSE).fill(null);
+    for(let i=0;i<N_DENSE;i++){
+      const xq = xsDense[i];
+      if(xq<=pts[0].x){ dense[i]=pts[0].y; continue; }
+      if(xq>=pts[pts.length-1].x){ dense[i]=pts[pts.length-1].y; continue; }
+      let lo=0, hi=pts.length-1;
+      while(hi-lo>1){ const mid=(lo+hi)>>1; if(pts[mid].x<=xq) lo=mid; else hi=mid; }
+      const t=(xq-pts[lo].x)/((pts[hi].x-pts[lo].x)||1e-6);
+      dense[i]=lerp(pts[lo].y, pts[hi].y, t);
+    }
+    customDense = dense;
+  }
+
+  function trueFn(x, i){
+    const key = state.func;
+    if(key==='custom') return customDense ? customDense[i] : 0;
+    return TARGET_FUNCS[key](x);
+  }
+
+  const state = {
+    seed: 1234,
+    func: 'sine',
+    N: 220, rho: 1.0, leak: 0.08, gain: 1.2, nTrain: 16, noise: 0.06,
+    net: null,
+    statesAll: null,
+    xTrain: [], yTrainNoisy: [], yTrueDense: [],
+    series: {}, visible: {reservoir:true, linear:true, spline:true, poly:true, rbf:true, knn:true},
+    playing: true, playhead: 0, playSpeed: 1.4,
+    yDomain: [-1.3, 1.3],
+    hoverNeuron: -1,
+  };
+
+  const METHOD_META = [
+    {key:'reservoir', label:'FlyBrain reservoir', color:'var(--s-reservoir)'},
+    {key:'linear', label:'Linear interpolation', color:'var(--s-linear)'},
+    {key:'spline', label:'Cubic spline', color:'var(--s-spline)'},
+    {key:'poly', label:'Polynomial (exact fit)', color:'var(--s-poly)'},
+    {key:'rbf', label:'Gaussian RBF network', color:'var(--s-rbf)'},
+    {key:'knn', label:'k-Nearest neighbors', color:'var(--s-knn)'},
+  ];
+
+  function cssVar(name){
+    return getComputedStyle(document.documentElement).getPropertyValue(name.replace('var(','').replace(')','')).trim() || name;
+  }
+  function resolveColor(v){
+    if(v.startsWith('var(')) return cssVar(v);
+    return v;
+  }
+
+  function runExperiment(rebuildNet){
+    if(rebuildNet || !state.net){
+      state.net = buildConnectome(state.N, state.seed);
+      document.getElementById('statNeurons').textContent = state.net.N;
+      document.getElementById('statEdges').textContent = state.net.src.length.toLocaleString();
+    }
+    const rngSample = mulberry32(state.seed*7919+3);
+    if(state.func==='custom') buildCustomDense();
+    const yTrueDense = xsDense.map((x,i)=>trueFn(x,i));
+    state.yTrueDense = yTrueDense;
+
+    const trainIdx = stratifiedIndices(N_DENSE, state.nTrain, rngSample);
+    const xTrain = trainIdx.map(i=>xsDense[i]);
+    const rngNoise = mulberry32(state.seed*104729+17);
+    const yTrainClean = trainIdx.map(i=>yTrueDense[i]);
+    const yTrainNoisy = yTrainClean.map(y=>y + gaussian(rngNoise)*state.noise);
+    state.xTrain = xTrain; state.yTrainNoisy = yTrainNoisy;
+
+    const statesAll = runSweep(state.net, xsDense, state.rho, state.leak, state.gain, state.noise*0.4, state.seed);
+    state.statesAll = statesAll;
+
+    const resModel = fitReservoirReadout(statesAll, trainIdx, yTrainNoisy, 1e-3);
+    const yRes = predictReservoir(resModel, statesAll);
+
+    const yLinear = xsDense.map(linearInterp(xTrain, yTrainNoisy));
+    const yaSpline = xsDense.map(naturalCubicSpline(xTrain, yTrainNoisy));
+    const polyPts = xTrain.length>22 ? {xs:xTrain.slice(0,22), ys:yTrainNoisy.slice(0,22)} : {xs:xTrain, ys:yTrainNoisy};
+    const yPoly = xsDense.map(lagrangeInterp(polyPts.xs, polyPts.ys));
+    const domainWidth = DOMAIN[1]-DOMAIN[0];
+    const sigma = clamp((domainWidth/xTrain.length)*1.4, 0.03, 1);
+    const yRbf = xsDense.map(rbfFit(xTrain, yTrainNoisy, sigma, 1e-3));
+    const k = Math.max(1, Math.min(3, xTrain.length));
+    const yKnn = xsDense.map(knnPredictor(xTrain, yTrainNoisy, k));
+
+    state.series = {
+      reservoir: yRes, linear: yLinear, spline: yaSpline, poly: yPoly, rbf: yRbf, knn: yKnn,
+    };
+    state.metrics = {};
+    METHOD_META.forEach(m=> state.metrics[m.key] = metrics(yTrueDense, state.series[m.key]));
+
+    renderBrainLegend();
+    renderMetricsTable();
+    renderResultsLegend();
+    layoutBrainCanvas(true);
+    drawResultsChart();
+    state.playhead = 0;
+  }
+
+  function renderBrainLegend(){
+    const el = document.getElementById('brainLegend');
+    const groups = [
+      {name:'Optic lobes', color:'var(--g-optic)'},
+      {name:'Mushroom body', color:'var(--g-mushroom)'},
+      {name:'Central complex', color:'var(--g-central)'},
+      {name:'Antennal / lateral horn', color:'var(--g-olfactory)'},
+      {name:'Other central brain', color:'var(--g-other)'},
+    ];
+    el.innerHTML = groups.map(g=>`<span class="legend-item"><span class="swatch" style="background:${g.color}"></span>${g.name}</span>`).join('')
+      + `<span class="legend-item"><span class="colorbar"></span>inhibitory ← activity → excitatory</span>`;
+  }
+
+  function renderResultsLegend(){
+    const el = document.getElementById('resultsLegend');
+    let html = `<label class="chip line ${true?'':'off'}" data-key="__true"><span class="swatch" style="background:var(--true-line)"></span>True function</label>`;
+    METHOD_META.forEach(m=>{
+      const off = !state.visible[m.key] ? 'off' : '';
+      html += `<label class="chip line ${off}" data-key="${m.key}"><input type="checkbox" ${state.visible[m.key]?'checked':''}><span class="swatch" style="background:${m.color}"></span>${m.label}</label>`;
+    });
+    el.innerHTML = html;
+    el.querySelectorAll('.chip').forEach(chip=>{
+      chip.addEventListener('click', (e)=>{
+        const key = chip.dataset.key;
+        if(key==='__true') return;
+        state.visible[key] = !state.visible[key];
+        chip.classList.toggle('off', !state.visible[key]);
+        const cb = chip.querySelector('input'); if(cb) cb.checked = state.visible[key];
+        drawResultsChart();
+      });
+    });
+  }
+
+  function renderMetricsTable(){
+    const tbody = document.querySelector('#metricsTable tbody');
+    const rows = METHOD_META.map(m=>({...m, ...state.metrics[m.key]}));
+    rows.sort((a,b)=> (a.rmse - b.rmse));
+    document.getElementById('resultsCaption').textContent =
+      `Best fit this run: ${rows[0].label} (RMSE ${fmt(rows[0].rmse)}). Ranked by root-mean-squared error against the true, noiseless function.`;
+    tbody.innerHTML = rows.map((r,i)=>`
+      <tr class="${i===0?'best':''}">
+        <td><span class="rank-badge">${i+1}</span></td>
+        <td class="method-name"><span class="swatch" style="background:${r.color}"></span>${r.label}</td>
+        <td class="num">${fmt(r.rmse)}</td>
+        <td class="num">${fmt(r.mae)}</td>
+        <td class="num">${Number.isFinite(r.r2)? r.r2.toFixed(3) : '—'}</td>
+      </tr>`).join('');
+  }
+
+  function activationColor(v){
+    v = clamp(v,-1,1);
+    const neg=[0x39,0x87,0xe5], mid=[0x45,0x45,0x41], pos=[0xe6,0x67,0x67];
+    let c;
+    if(v<0){ const t=1+v; c=[lerp(neg[0],mid[0],t),lerp(neg[1],mid[1],t),lerp(neg[2],mid[2],t)]; }
+    else { const t=v; c=[lerp(mid[0],pos[0],t),lerp(mid[1],pos[1],t),lerp(mid[2],pos[2],t)]; }
+    return `rgb(${c[0]|0},${c[1]|0},${c[2]|0})`;
+  }
+
+  const brainCanvas = document.getElementById('brainCanvas');
+  const brainCtx = brainCanvas.getContext('2d');
+  let brainDims = {w:0,h:0,dpr:1};
+  function layoutBrainCanvas(force){
+    const rect = brainCanvas.getBoundingClientRect();
+    const dpr = Math.min(window.devicePixelRatio||1, 2);
+    const w = Math.max(1, Math.round(rect.width*dpr));
+    const h = Math.max(1, Math.round(rect.height*dpr));
+    if(force || brainDims.w!==w || brainDims.h!==h){
+      brainCanvas.width=w; brainCanvas.height=h;
+      brainDims = {w,h,dpr};
+    }
+  }
+  function mapPt(nx, ny, w, h){
+    const scale = Math.min(w,h)*0.46;
+    return [w/2 + nx*scale, h/2 + ny*scale];
+  }
+
+  function drawBrain(activation, tMs){
+    layoutBrainCanvas(false);
+    const w = brainDims.w, h = brainDims.h;
+    const ctx = brainCtx;
+    ctx.save();
+    ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--surface-chart') || '#1a1a19';
+    ctx.fillRect(0,0,w,h);
+
+    NEUROPILS.forEach(np=>{
+      const [cx,cy] = mapPt(np.cx, np.cy, w, h);
+      const rScale = Math.min(w,h)*0.46;
+      const rx = np.rx*rScale*1.25, ry = np.ry*rScale*1.25;
+      const grad = ctx.createRadialGradient(cx,cy,0,cx,cy,Math.max(rx,ry));
+      const col = resolveColor(GROUP_COLOR[np.group]);
+      grad.addColorStop(0, col+'2a'.length===2?col:col);
+      ctx.globalAlpha = 0.10;
+      ctx.fillStyle = col;
+      ctx.beginPath();
+      ctx.ellipse(cx,cy,rx,ry,0,0,Math.PI*2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    });
+
+    const net = state.net;
+    if(net){
+      const pos = net.neurons.map(nn=>mapPt(nn.x, nn.y, w, h));
+      const maxE = Math.min(net.src.length, 4200);
+      const step = Math.max(1, Math.floor(net.src.length/maxE));
+      ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--grid') || '#2c2c2a';
+      ctx.globalAlpha = 0.5;
+      ctx.lineWidth = Math.max(1, brainDims.dpr*0.6);
+      ctx.beginPath();
+      for(let e=0;e<net.src.length;e+=step){
+        const a = pos[net.src[e]], b = pos[net.dst[e]];
+        ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]);
+      }
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+
+      const r = Math.max(1.1, Math.min(w,h)*0.0032);
+      for(let i=0;i<net.N;i++){
+        let v;
+        if(activation) v = activation[i];
+        else v = Math.sin(tMs*0.0011 + i*0.37)*0.12*Math.sin(i*12.9898);
+        ctx.fillStyle = activationColor(v);
+        ctx.beginPath();
+        ctx.arc(pos[i][0], pos[i][1], r + Math.abs(v)*r*1.8, 0, Math.PI*2);
+        ctx.fill();
+      }
+      if(state.hoverNeuron>=0 && state.hoverNeuron<net.N){
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(pos[state.hoverNeuron][0], pos[state.hoverNeuron][1], r*3.4, 0, Math.PI*2);
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
+
+  function pickNearestNeuron(px, py){
+    const net = state.net;
+    if(!net) return -1;
+    const rect = brainCanvas.getBoundingClientRect();
+    const w = brainDims.w, h = brainDims.h;
+    const cx = (px-rect.left)/rect.width*w;
+    const cy = (py-rect.top)/rect.height*h;
+    let best=-1, bd=1e9;
+    for(let i=0;i<net.N;i++){
+      const [nx,ny] = mapPt(net.neurons[i].x, net.neurons[i].y, w, h);
+      const d = (nx-cx)*(nx-cx)+(ny-cy)*(ny-cy);
+      if(d<bd){ bd=d; best=i; }
+    }
+    return bd < (Math.min(w,h)*0.02)**2 ? best : -1;
+  }
+  brainCanvas.addEventListener('mousemove', (e)=>{
+    state.hoverNeuron = pickNearestNeuron(e.clientX, e.clientY);
+  });
+  brainCanvas.addEventListener('mouseleave', ()=>{ state.hoverNeuron = -1; });
+
+  const resultsCanvas = document.getElementById('resultsChart');
+  const resultsCtx = resultsCanvas.getContext('2d');
+  let resultsDims = {w:0,h:0,dpr:1};
+  function layoutResultsCanvas(){
+    const rect = resultsCanvas.getBoundingClientRect();
+    const dpr = Math.min(window.devicePixelRatio||1, 2);
+    const w = Math.max(1, Math.round(rect.width*dpr));
+    const h = Math.max(1, Math.round(rect.height*dpr));
+    if(resultsDims.w!==w || resultsDims.h!==h){
+      resultsCanvas.width=w; resultsCanvas.height=h;
+      resultsDims = {w,h,dpr};
+    }
+  }
+  const CHART_PAD = {l:44, r:16, t:14, b:26};
+
+  function chartScales(w,h){
+    const pl = CHART_PAD.l*resultsDims.dpr/1, pr=CHART_PAD.r*resultsDims.dpr, pt=CHART_PAD.t*resultsDims.dpr, pb=CHART_PAD.b*resultsDims.dpr;
+    const x0=pl, x1=w-pr, y0=pt, y1=h-pb;
+    const [ymin,ymax] = state.yDomain;
+    return {
+      x: (x)=> lerp(x0,x1,(x-DOMAIN[0])/(DOMAIN[1]-DOMAIN[0])),
+      y: (y)=> lerp(y1,y0,(clamp(y,ymin,ymax)-ymin)/(ymax-ymin)),
+      x0,x1,y0,y1
+    };
+  }
+
+  function drawResultsChart(){
+    layoutResultsCanvas();
+    const w=resultsDims.w, h=resultsDims.h;
+    const ctx = resultsCtx;
+    ctx.clearRect(0,0,w,h);
+    const S = chartScales(w,h);
+    const ink2 = getComputedStyle(document.documentElement).getPropertyValue('--ink-2')||'#c3c2b7';
+    const muted = getComputedStyle(document.documentElement).getPropertyValue('--ink-muted')||'#898781';
+    const grid = getComputedStyle(document.documentElement).getPropertyValue('--grid')||'#2c2c2a';
+    const axis = getComputedStyle(document.documentElement).getPropertyValue('--axis')||'#454541';
+
+    ctx.strokeStyle = grid; ctx.lineWidth = 1;
+    ctx.font = `${11*resultsDims.dpr}px "IBM Plex Mono", monospace`;
+    ctx.fillStyle = muted;
+    for(let gy=-1;gy<=1.01;gy+=0.5){
+      const y = S.y(gy);
+      ctx.beginPath(); ctx.moveTo(S.x0,y); ctx.lineTo(S.x1,y); ctx.stroke();
+      ctx.fillText(gy.toFixed(1), 4*resultsDims.dpr, y+4*resultsDims.dpr);
+    }
+    for(let gx=-1; gx<=1.001; gx+=0.5){
+      ctx.fillText(gx.toFixed(1), S.x(gx)-10*resultsDims.dpr, h-6*resultsDims.dpr);
+    }
+    ctx.strokeStyle = axis;
+    ctx.beginPath(); ctx.moveTo(S.x0,S.y0); ctx.lineTo(S.x0,S.y1); ctx.lineTo(S.x1,S.y1); ctx.stroke();
+
+    function strokePath(ys, color, width, dash){
+      ctx.beginPath();
+      ctx.setLineDash(dash||[]);
+      ctx.strokeStyle = resolveColor(color);
+      ctx.lineWidth = width*resultsDims.dpr;
+      let started=false;
+      for(let i=0;i<xsDense.length;i++){
+        const yv = ys[i];
+        if(!Number.isFinite(yv)){ started=false; continue; }
+        const px = S.x(xsDense[i]), py = S.y(yv);
+        if(!started){ ctx.moveTo(px,py); started=true; } else ctx.lineTo(px,py);
+      }
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    if(state.yTrueDense){
+      strokePath(state.yTrueDense, 'var(--true-line)', 1.6, [5*resultsDims.dpr,4*resultsDims.dpr]);
+    }
+    METHOD_META.forEach(m=>{
+      if(!state.visible[m.key]) return;
+      strokePath(state.series[m.key], m.color, m.key==='reservoir'?2.4:1.7, []);
+    });
+
+    if(state.xTrain){
+      ctx.fillStyle = resolveColor('var(--ink-muted)');
+      state.xTrain.forEach((x,i)=>{
+        const px=S.x(x), py=S.y(state.yTrainNoisy[i]);
+        ctx.beginPath(); ctx.arc(px,py,3.4*resultsDims.dpr,0,Math.PI*2); ctx.fill();
+        ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--surface-chart')||'#1a1a19';
+        ctx.lineWidth = 1.4*resultsDims.dpr; ctx.stroke();
+      });
+    }
+
+    const phx = xsDense[state.playhead];
+    const px = S.x(phx);
+    ctx.strokeStyle = resolveColor('var(--ink)');
+    ctx.globalAlpha = 0.5;
+    ctx.beginPath(); ctx.moveTo(px,S.y0); ctx.lineTo(px,S.y1); ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  resultsCanvas.addEventListener('mousemove', (e)=>{
+    const rect = resultsCanvas.getBoundingClientRect();
+    const dpr = resultsDims.dpr;
+    const mx = (e.clientX-rect.left)*dpr;
+    const S = chartScales(resultsDims.w, resultsDims.h);
+    let bestI=0, bd=1e9;
+    for(let i=0;i<xsDense.length;i+=2){
+      const d = Math.abs(S.x(xsDense[i])-mx);
+      if(d<bd){bd=d; bestI=i;}
+    }
+    const tt = document.getElementById('chartTooltip');
+    const lines = [`<div class="row"><b>x = ${xsDense[bestI].toFixed(2)}</b></div>`,
+      `<div class="row"><span class="dot" style="background:var(--true-line)"></span>true ${fmt(state.yTrueDense[bestI],3)}</div>`];
+    METHOD_META.forEach(m=>{
+      if(!state.visible[m.key]) return;
+      lines.push(`<div class="row"><span class="dot" style="background:${m.color}"></span>${m.label} ${fmt(state.series[m.key][bestI],3)}</div>`);
+    });
+    tt.innerHTML = lines.join('');
+    tt.style.opacity = 1;
+    const wrap = resultsCanvas.parentElement.getBoundingClientRect();
+    let left = e.clientX-wrap.left+14, top = e.clientY-wrap.top+14;
+    tt.style.left = Math.min(left, wrap.width-180)+'px';
+    tt.style.top = Math.min(top, wrap.height-100)+'px';
+  });
+  resultsCanvas.addEventListener('mouseleave', ()=>{ document.getElementById('chartTooltip').style.opacity=0; });
+
+  const chaosCanvas = document.getElementById('chaosChart');
+  const chaosCtx = chaosCanvas.getContext('2d');
+  let chaosDims={w:0,h:0,dpr:1};
+  let chaosData = null;
+  function layoutChaosCanvas(){
+    const rect = chaosCanvas.getBoundingClientRect();
+    const dpr = Math.min(window.devicePixelRatio||1,2);
+    const w=Math.max(1,Math.round(rect.width*dpr)), h=Math.max(1,Math.round(rect.height*dpr));
+    if(chaosDims.w!==w||chaosDims.h!==h){ chaosCanvas.width=w; chaosCanvas.height=h; chaosDims={w,h,dpr}; }
+  }
+  function drawChaosChart(){
+    layoutChaosCanvas();
+    const w=chaosDims.w, h=chaosDims.h, ctx=chaosCtx;
+    ctx.clearRect(0,0,w,h);
+    const pl=44*chaosDims.dpr, pr=16*chaosDims.dpr, pt=14*chaosDims.dpr, pb=26*chaosDims.dpr;
+    const x0=pl,x1=w-pr,y0=pt,y1=h-pb;
+    const grid = getComputedStyle(document.documentElement).getPropertyValue('--grid')||'#2c2c2a';
+    const axis = getComputedStyle(document.documentElement).getPropertyValue('--axis')||'#454541';
+    const muted = getComputedStyle(document.documentElement).getPropertyValue('--ink-muted')||'#898781';
+    ctx.font = `${11*chaosDims.dpr}px "IBM Plex Mono", monospace`;
+    ctx.strokeStyle = axis; ctx.beginPath(); ctx.moveTo(x0,y0); ctx.lineTo(x0,y1); ctx.lineTo(x1,y1); ctx.stroke();
+    if(!chaosData){
+      ctx.fillStyle = muted;
+      ctx.fillText('Run "Scan edge of chaos" to populate this chart.', x0+8, (y0+y1)/2);
+      return;
+    }
+    const rhos = chaosData.rhos, logs = chaosData.logRmse;
+    const lo = Math.min(...logs.filter(Number.isFinite)), hi = Math.max(...logs.filter(Number.isFinite));
+    const pad = (hi-lo)*0.15 || 0.5;
+    const ymin=lo-pad, ymax=hi+pad;
+    const rmin = rhos[0], rmax = rhos[rhos.length-1];
+    const X = r=> lerp(x0,x1,(r-rmin)/(rmax-rmin));
+    const Y = v=> lerp(y1,y0,(clamp(v,ymin,ymax)-ymin)/(ymax-ymin));
+    ctx.strokeStyle = grid;
+    for(let i=0;i<=4;i++){
+      const rv = lerp(rmin,rmax,i/4);
+      ctx.beginPath(); ctx.moveTo(X(rv),y0); ctx.lineTo(X(rv),y1); ctx.stroke();
+      ctx.fillStyle = muted;
+      ctx.fillText(rv.toFixed(2), X(rv)-10*chaosDims.dpr, y1+16*chaosDims.dpr);
+    }
+    ctx.beginPath();
+    ctx.strokeStyle = resolveColor('var(--s-reservoir)');
+    ctx.lineWidth = 2.2*chaosDims.dpr;
+    let started=false;
+    for(let i=0;i<rhos.length;i++){
+      if(!Number.isFinite(logs[i])){ started=false; continue; }
+      const px=X(rhos[i]), py=Y(logs[i]);
+      if(!started){ ctx.moveTo(px,py); started=true; } else ctx.lineTo(px,py);
+    }
+    ctx.stroke();
+    let bi=0, bv=Infinity;
+    logs.forEach((v,i)=>{ if(Number.isFinite(v) && v<bv){ bv=v; bi=i; } });
+    ctx.fillStyle = resolveColor('var(--good)');
+    ctx.beginPath(); ctx.arc(X(rhos[bi]), Y(logs[bi]), 4*chaosDims.dpr, 0, Math.PI*2); ctx.fill();
+
+    const curRho = state.rho;
+    if(curRho>=rmin && curRho<=rmax){
+      ctx.strokeStyle = resolveColor('var(--ink)');
+      ctx.globalAlpha=0.45;
+      ctx.beginPath(); ctx.moveTo(X(curRho),y0); ctx.lineTo(X(curRho),y1); ctx.stroke();
+      ctx.globalAlpha=1;
+    }
+  }
+
+  function runChaosScan(){
+    const rhos = [];
+    for(let r=0.2;r<=2.6+1e-9;r+=0.12) rhos.push(Math.round(r*100)/100);
+    const net = state.net;
+    const trainIdx = stratifiedIndices(N_DENSE, state.nTrain, mulberry32(state.seed*7919+3));
+    const xTrain = trainIdx.map(i=>xsDense[i]);
+    const yTrue = state.yTrueDense;
+    const rngNoise = mulberry32(state.seed*104729+17);
+    const yTrainNoisy = trainIdx.map(i=>yTrue[i]).map(y=>y+gaussian(rngNoise)*state.noise);
+    const scanLeak = 0.9;
+    const logRmse = rhos.map(r=>{
+      const states = runSweep(net, xsDense, r, scanLeak, state.gain, state.noise*0.4, state.seed);
+      const model = fitReservoirReadout(states, trainIdx, yTrainNoisy, 1e-3);
+      const yhat = predictReservoir(model, states);
+      const met = metrics(yTrue, yhat);
+      return Math.log10((Number.isFinite(met.rmse)?met.rmse:1e6) + 1e-6);
+    });
+    chaosData = {rhos, logRmse};
+    let bi=0, bv=Infinity;
+    logRmse.forEach((v,i)=>{ if(Number.isFinite(v)&&v<bv){bv=v;bi=i;} });
+    document.getElementById('chaosBestRho').textContent = rhos[bi].toFixed(2);
+    document.getElementById('chaosBestRmse').textContent = fmt(Math.pow(10,bv));
+    drawChaosChart();
+  }
+
+  function bindSlider(id, valId, key, digits, onchange){
+    const el = document.getElementById(id), out = document.getElementById(valId);
+    el.addEventListener('input', ()=>{
+      const v = parseFloat(el.value);
+      state[key] = v;
+      out.textContent = v.toFixed(digits);
+      if(onchange) onchange(v);
+    });
+  }
+  bindSlider('sN','vN','N',0);
+  bindSlider('sRho','vRho','rho',2);
+  bindSlider('sLeak','vLeak','leak',2);
+  bindSlider('sGain','vGain','gain',1);
+  bindSlider('sTrain','vTrain','nTrain',0);
+  bindSlider('sNoise','vNoise','noise',2);
+
+  document.getElementById('funcSelect').addEventListener('change', (e)=>{
+    state.func = e.target.value;
+    document.getElementById('drawWrap').classList.toggle('active', state.func==='custom');
+  });
+
+  document.getElementById('runBtn').addEventListener('click', ()=>{
+    runExperiment(true);
+  });
+  document.getElementById('randBtn').addEventListener('click', ()=>{
+    state.seed = Math.floor(Math.random()*1e9);
+    runExperiment(true);
+  });
+  document.getElementById('chaosBtn').addEventListener('click', ()=>{
+    if(!state.net) return;
+    runChaosScan();
+  });
+
+  const playBtn = document.getElementById('playBtn');
+  playBtn.addEventListener('click', ()=>{
+    state.playing = !state.playing;
+    playBtn.textContent = state.playing ? '❚❚' : '▶';
+  });
+  const scrub = document.getElementById('scrub');
+  scrub.addEventListener('input', ()=>{
+    state.playing=false; playBtn.textContent='▶';
+    state.playhead = parseInt(scrub.value,10);
+  });
+
+  const drawCanvas = document.getElementById('drawCanvas');
+  const drawCtx = drawCanvas.getContext('2d');
+  function layoutDrawCanvas(){
+    const rect = drawCanvas.getBoundingClientRect();
+    const dpr = Math.min(window.devicePixelRatio||1,2);
+    drawCanvas.width = Math.max(1,Math.round(rect.width*dpr));
+    drawCanvas.height = Math.max(1,Math.round(rect.height*dpr));
+  }
+  function redrawDraw(){
+    layoutDrawCanvas();
+    const w=drawCanvas.width, h=drawCanvas.height;
+    drawCtx.clearRect(0,0,w,h);
+    drawCtx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--grid');
+    drawCtx.beginPath(); drawCtx.moveTo(0,h/2); drawCtx.lineTo(w,h/2); drawCtx.stroke();
+    if(customPoints.length<2) return;
+    const pts = customPoints.slice().sort((a,b)=>a.x-b.x);
+    drawCtx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--true-line') || '#fff';
+    drawCtx.lineWidth = 2;
+    drawCtx.beginPath();
+    pts.forEach((p,i)=>{
+      const px = (p.x+1)/2*w, py = (1-(p.y+1)/2)*h;
+      if(i===0) drawCtx.moveTo(px,py); else drawCtx.lineTo(px,py);
+    });
+    drawCtx.stroke();
+  }
+  let drawing=false;
+  function drawPointFromEvent(e){
+    const rect = drawCanvas.getBoundingClientRect();
+    const px = (e.clientX-rect.left)/rect.width;
+    const py = (e.clientY-rect.top)/rect.height;
+    const x = clamp(px*2-1,-1,1);
+    const y = clamp((1-py)*2-1,-1,1);
+    customPoints.push({x,y});
+    redrawDraw();
+  }
+  drawCanvas.addEventListener('pointerdown', (e)=>{ drawing=true; drawCanvas.setPointerCapture(e.pointerId); drawPointFromEvent(e); });
+  drawCanvas.addEventListener('pointermove', (e)=>{ if(drawing) drawPointFromEvent(e); });
+  window.addEventListener('pointerup', ()=>{
+    if(drawing && state.func==='custom'){ runExperiment(false); }
+    drawing=false;
+  });
+  document.getElementById('clearDrawBtn').addEventListener('click', ()=>{
+    customPoints=[]; customDense=null; redrawDraw();
+    if(state.func==='custom') runExperiment(false);
+  });
+
+  window.addEventListener('resize', ()=>{
+    layoutBrainCanvas(true); layoutResultsCanvas(); layoutChaosCanvas(); redrawDraw();
+    drawResultsChart(); if(chaosData) drawChaosChart();
+  });
+
+  let lastT = performance.now();
+  function tick(now){
+    const dt = Math.max(0, now-lastT); lastT = now;
+    if(state.statesAll){
+      if(state.playing){
+        state.playhead += dt*0.001*state.playSpeed*120;
+        if(state.playhead>=N_DENSE) state.playhead = 0;
+      }
+      const idx = ((Math.floor(state.playhead) % N_DENSE) + N_DENSE) % N_DENSE;
+      scrub.value = idx;
+      document.getElementById('playheadReadout').textContent = `x = ${xsDense[idx].toFixed(2)}`;
+      drawBrain(state.statesAll[idx], now);
+      drawResultsChart();
+    } else {
+      drawBrain(null, now);
+    }
+    requestAnimationFrame(tick);
+  }
+
+  playBtn.textContent = state.playing ? '❚❚' : '▶';
+  redrawDraw();
+  runExperiment(true);
+  requestAnimationFrame(tick);
+  drawChaosChart();
+})();
+</script>
