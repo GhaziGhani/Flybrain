@@ -239,14 +239,15 @@
     In 2024, FlyWire and an international consortium published the first complete wiring diagram of a fly
     brain. Janelia FlyEM, the MRC Laboratory of Molecular Biology, the University of Cambridge and Google
     Research have since gone further, completing the <b>male CNS connectome</b> — brain <i>and</i> ventral
-    nerve cord, seamlessly wired together, every neuron reconstructed and every synapse annotated. This
-    update rebuilds the model around that fuller picture: signals no longer stop at an abstract "motor"
-    layer inside the brain. They now descend, the way they really do, from the central complex into a
-    modeled nerve cord, where an actual population of motor neurons does the driving. Switch to
-    <b>Interpolate a function</b> to see the brain read a signal back from a few labeled samples in one
-    shot. Or switch to its flagship task, <b>Ride a bicycle</b>, and watch that descending pathway learn,
-    attempt after attempt, to keep a bicycle upright — trained purely by trial, error and a reward signal,
-    while the rest of the recurrent circuit never changes.
+    nerve cord, seamlessly wired together, every neuron reconstructed and every synapse annotated. Below,
+    that same circuit takes on real jobs. Its flagship task is <b>Forecast a trend</b>: paste in an actual
+    sequence of numbers — sales, prices, readings, anything ordered — and its optic lobes read it once,
+    step by step, while a trained readout learns to predict each next value and then keeps going past the
+    end of what you gave it. Switch to <b>Ride a bicycle</b> to watch signals descend from its central
+    complex into a modeled nerve cord, where a population of motor neurons learns, attempt after attempt,
+    to keep a bicycle upright by trial, error and reward alone. Or switch to <b>Interpolate a function</b>
+    to see it read a signal back from a few labeled samples in one shot. In every case, only a small
+    trainable readout changes — the rest of the recurrent circuit never does.
   </p>
   <div class="fact-row">
     <span class="fact-pill">Real male CNS: <b>~166,000</b> neurons</span>
@@ -269,7 +270,12 @@
     <p>Same circuit, same neuropils — only what it's asked to do, and which synapses get tuned, changes.</p>
   </div>
   <div class="task-tabs">
-    <div class="task-tab active" id="tabBike" data-task="bike">
+    <div class="task-tab active" id="tabForecast" data-task="forecast">
+      <span class="tag">Learns from your data</span>
+      <span class="name">Forecast a trend</span>
+      <span class="desc">Paste a real sequence of numbers — sales, prices, readings — and watch it learn the pattern and predict what comes next.</span>
+    </div>
+    <div class="task-tab" id="tabBike" data-task="bike">
       <span class="tag">Learns over time</span>
       <span class="name">Ride a bicycle</span>
       <span class="desc">Balance a lean-and-steer bicycle model from scratch, purely by practice and reward.</span>
@@ -285,7 +291,7 @@
 <section id="cockpit-section">
   <div class="section-head">
     <h2>The circuit</h2>
-    <p>Each dot is a simulated neuron, clustered into the fly's real neuropils — brain regions above, a modeled ventral nerve cord hanging below it. Edges carry signed synaptic weights — warm neurons are excitatory, cool ones inhibitory, by Dale's law. This part is shared by both tasks.</p>
+    <p>Each dot is a simulated neuron, clustered into the fly's real neuropils — brain regions above, a modeled ventral nerve cord hanging below it. Edges carry signed synaptic weights — warm neurons are excitatory, cool ones inhibitory, by Dale's law. This part is shared by all three tasks.</p>
   </div>
   <div class="cockpit">
     <div class="panel brain-panel">
@@ -400,6 +406,68 @@
     speed-scaled steering correction, plus damping and disturbance) — not the full multi-body dynamics of
     a real bicycle. It keeps the physics honest enough to be genuinely hard without a working controller,
     while staying fast enough to simulate hundreds of attempts per second in a browser.
+  </p>
+</section>
+
+<section id="panel-forecast">
+  <div class="section-head">
+    <h2>Task: forecast a trend</h2>
+    <p>Paste any ordered sequence of real numbers. The brain reads it once, values feeding into its optic
+      lobes step by step alongside a sense of position in time, and a trained readout learns to predict each
+      next value from what came before. Validate it against data you hold back, or point it past the end of
+      what you gave it.</p>
+  </div>
+
+  <div class="cockpit" style="margin-bottom:18px;">
+    <div class="control-deck panel" style="grid-column: 1 / -1;">
+      <div class="field">
+        <div class="field-row"><label>Your data — one value per line, or comma-separated</label></div>
+        <textarea id="seriesInput" rows="6" style="width:100%;padding:10px 12px;border-radius:9px;border:1px solid var(--border);background:var(--panel-2);color:var(--ink);font-family:'IBM Plex Mono',monospace;font-size:12.5px;resize:vertical;"></textarea>
+        <p class="hint">No dates needed — just the values, in order, evenly spaced (daily, monthly, whatever your series actually is).</p>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-ghost" id="exampleTrendBtn">Try example: growth + seasonality (synthetic)</button>
+        <button class="btn btn-ghost" id="exampleWalkBtn">Try example: noisy drift (synthetic)</button>
+      </div>
+      <div class="field">
+        <div class="field-row"><label>Mode</label></div>
+        <div class="btn-row">
+          <button class="btn btn-primary" id="modeValidateBtn">Validate accuracy</button>
+          <button class="btn btn-ghost" id="modeExtendBtn">Predict what's next</button>
+        </div>
+        <p class="hint" id="modeHint">Holds back the last stretch of your data, learns from the rest, and checks its guess against what actually happened.</p>
+      </div>
+      <div class="field">
+        <div class="field-row"><label>Forecast horizon</label><span class="val" id="vHorizon">20%</span></div>
+        <input type="range" id="sHorizon" min="5" max="40" step="1" value="20">
+      </div>
+      <div class="btn-row"><button class="btn btn-primary" id="forecastBtn">Learn &amp; forecast</button></div>
+      <p class="hint" id="forecastError" style="color:var(--critical);display:none;"></p>
+    </div>
+  </div>
+
+  <div class="results-wrap">
+    <div class="panel chart-panel">
+      <div class="chart-canvas-wrap">
+        <canvas id="forecastChart"></canvas>
+        <div class="tooltip" id="forecastTooltip"></div>
+      </div>
+      <div class="chart-legend" id="forecastLegend"></div>
+    </div>
+    <div class="panel" id="forecastTablePanel">
+      <table class="metrics" id="forecastTable">
+        <thead><tr><th></th><th>Method</th><th class="num">RMSE</th><th class="num">MAE</th><th class="num">MAPE</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <p class="caption" id="forecastCaption"></p>
+  </div>
+  <p class="disclaimer" style="margin-top:16px;">
+    This is a general-purpose learning demonstration, not financial, medical or safety-critical forecasting
+    software. It finds patterns in whatever you give it, including patterns that won't repeat — nothing here
+    should drive a high-stakes decision on its own. The reservoir sees each value plus its position in time,
+    predicts one step ahead, and — beyond your last known point — feeds its own predictions back in to keep
+    going, so errors can compound the further out it forecasts.
   </p>
 </section>
 
@@ -835,7 +903,7 @@
     };
   }
 
-  function bikeStep(net, w, st, pre, u1, u2, gain, leak, noiseStd, rng){
+  function reservoirStepGeneric(net, w, st, pre, u1, u2, gain, leak, noiseStd, rng){
     matvecSparse(net.src, net.dst, w, net.N, st, pre);
     for(let i=0;i<net.N;i++){
       let p = pre[i] + net.wIn[i]*u1*gain + net.wIn2[i]*u2*gain;
@@ -857,7 +925,7 @@
     for(let step=0; step<params.maxSteps; step++){
       const oTheta = clamp(theta/params.thetaMax, -2, 2);
       const oThetaDot = clamp(thetaDot/params.maxOmega, -2, 2);
-      bikeStep(net, params.w, st, pre, oTheta, oThetaDot, params.gain, params.leak, params.noiseStd, rng);
+      reservoirStepGeneric(net, params.w, st, pre, oTheta, oThetaDot, params.gain, params.leak, params.noiseStd, rng);
       let u=0;
       for(let k=0;k<net.motorIdx.length;k++) u += wOut[k]*st[net.motorIdx[k]];
       u = Math.tanh(u);
@@ -936,8 +1004,309 @@
     refreshToolbarForTask();
   }
 
+  function parseSeries(text){
+    return text.split(/[\s,;]+/).map(s=>s.trim()).filter(s=>s.length>0).map(Number).filter(Number.isFinite);
+  }
+  function exampleTrendSeasonal(){
+    const rng = mulberry32(777);
+    const out=[];
+    for(let i=0;i<96;i++){
+      const trend = 40 + i*0.9;
+      const season = 12*Math.sin(2*Math.PI*i/12) + 4*Math.sin(2*Math.PI*i/6);
+      out.push(Math.round((trend+season+gaussian(rng)*3)*10)/10);
+    }
+    return out;
+  }
+  function exampleNoisyWalk(){
+    const rng = mulberry32(4242);
+    const out=[]; let v=50;
+    for(let i=0;i<90;i++){ v += gaussian(rng)*1.4 + 0.15; out.push(Math.round(v*10)/10); }
+    return out;
+  }
+  function persistenceForecast(train, H){ return new Array(H).fill(train[train.length-1]); }
+  function linearTrendForecast(train, H){
+    const n=train.length;
+    let sx=0,sy=0,sxx=0,sxy=0;
+    for(let i=0;i<n;i++){ sx+=i; sy+=train[i]; sxx+=i*i; sxy+=i*train[i]; }
+    const denom=(n*sxx-sx*sx)||1;
+    const slope=(n*sxy-sx*sy)/denom;
+    const intercept=(sy-slope*sx)/n;
+    const out=[];
+    for(let h=0;h<H;h++) out.push(intercept+slope*(n+h));
+    return out;
+  }
+  function holtForecast(train, H){
+    const alpha=0.35, beta=0.15;
+    let level=train[0], trend=train.length>1?train[1]-train[0]:0;
+    for(let i=1;i<train.length;i++){
+      const lastLevel=level;
+      level = alpha*train[i] + (1-alpha)*(level+trend);
+      trend = beta*(level-lastLevel) + (1-beta)*trend;
+    }
+    const out=[];
+    for(let h=1;h<=H;h++) out.push(level+h*trend);
+    return out;
+  }
+  function forecastMetrics(actual, pred){
+    const n = actual.length;
+    let sse=0, sae=0, sape=0;
+    for(let i=0;i<n;i++){
+      const e = pred[i]-actual[i];
+      sse+=e*e; sae+=Math.abs(e);
+      sape += Math.abs(e)/Math.max(1e-6, Math.abs(actual[i]));
+    }
+    return { rmse: Math.sqrt(sse/n), mae: sae/n, mape: (sape/n)*100 };
+  }
+
+  const FORECAST_META = [
+    {key:'reservoir', label:'FlyBrain reservoir', color:'var(--s-reservoir)'},
+    {key:'persistence', label:'Persistence (naive)', color:'var(--s-knn)'},
+    {key:'linear', label:'Linear trend', color:'var(--s-linear)'},
+    {key:'holt', label:"Holt's linear smoothing", color:'var(--s-rbf)'},
+  ];
+
+  function runForecastPipeline(){
+    const errEl = document.getElementById('forecastError');
+    errEl.style.display = 'none';
+    const net = state.net;
+    if(!net) return;
+    let raw = parseSeries(document.getElementById('seriesInput').value);
+    if(raw.length < 20){
+      errEl.textContent = `Need at least 20 numbers to learn anything meaningful — found ${raw.length}.`;
+      errEl.style.display = 'block';
+      return;
+    }
+    if(raw.length > 2000){ raw = raw.slice(raw.length-2000); }
+    const mode = state.forecast.mode;
+    const Ntotal = raw.length;
+    let H = Math.round(Ntotal*state.forecast.horizonPct/100);
+    H = Math.max(2, Math.min(H, Math.floor(Ntotal*0.5)));
+
+    const trainLen = mode==='validate' ? Ntotal-H : Ntotal;
+    const trainVals = raw.slice(0, trainLen);
+    const testVals = mode==='validate' ? raw.slice(trainLen) : null;
+
+    const mean = trainVals.reduce((a,b)=>a+b,0)/trainVals.length;
+    let variance=0; trainVals.forEach(v=>variance+=(v-mean)*(v-mean)); variance/=trainVals.length;
+    const std = Math.sqrt(variance) || 1;
+    const norm = v => (v-mean)/std;
+    const denorm = v => v*std+mean;
+
+    const totalSpan = trainLen+H;
+    const tNorm = i => (i/Math.max(1,totalSpan-1))*2-1;
+
+    const scaledW = new Float32Array(net.baseW.length);
+    for(let e=0;e<scaledW.length;e++) scaledW[e]=net.baseW[e]*state.rho;
+    const rng = mulberry32(state.seed*13+7);
+    const stBuf = new Float32Array(net.N);
+    const preBuf = new Float32Array(net.N);
+
+    const trainStates = new Array(trainLen);
+    const trace = [];
+    let prevNorm = 0;
+    for(let i=0;i<trainLen;i++){
+      reservoirStepGeneric(net, scaledW, stBuf, preBuf, prevNorm, tNorm(i), state.gain, state.leak, 0.01, rng);
+      trainStates[i] = stBuf.slice();
+      trace.push({state: stBuf.slice(), idx:i, value: trainVals[i], predicted:null, isForecast:false});
+      prevNorm = norm(trainVals[i]);
+    }
+
+    const fitWindow = Math.min(trainLen, 260);
+    const fitIdx = Array.from({length:fitWindow}, (_,k)=>trainLen-fitWindow+k);
+    const yTrainNorm = trainVals.map(norm);
+    const model = fitReservoirReadout(trainStates, fitIdx, fitIdx.map(i=>yTrainNorm[i]), 1e-3);
+
+    const predictedRes = [];
+    for(let h=0;h<H;h++){
+      const i = trainLen+h;
+      const inputPrev = h===0 ? prevNorm : norm(predictedRes[h-1]);
+      reservoirStepGeneric(net, scaledW, stBuf, preBuf, inputPrev, tNorm(i), state.gain, state.leak, 0.01, rng);
+      const sCopy = stBuf.slice();
+      const predNorm = predictReservoir(model, [sCopy])[0];
+      const predRaw = denorm(predNorm);
+      predictedRes.push(predRaw);
+      trace.push({state:sCopy, idx:i, value: testVals ? testVals[h] : null, predicted:predRaw, isForecast:true});
+    }
+
+    const seriesForecast = {
+      reservoir: predictedRes,
+      persistence: persistenceForecast(trainVals, H),
+      linear: linearTrendForecast(trainVals, H),
+      holt: holtForecast(trainVals, H),
+    };
+
+    let metricsPerMethod = null;
+    if(mode==='validate'){
+      metricsPerMethod = {};
+      FORECAST_META.forEach(m=>{ metricsPerMethod[m.key] = forecastMetrics(testVals, seriesForecast[m.key]); });
+    }
+
+    state.forecast.result = { raw, trainLen, H, mode, seriesForecast, metricsPerMethod };
+    state.forecast.trace = trace;
+    state.playhead = 0;
+    refreshToolbarForTask();
+    renderForecastLegend();
+    renderForecastTable();
+    drawForecastChart();
+  }
+
+  function renderForecastLegend(){
+    const el = document.getElementById('forecastLegend');
+    let html = `<label class="chip line" data-key="__true"><span class="swatch" style="background:var(--true-line)"></span>Your data</label>`;
+    FORECAST_META.forEach(m=>{
+      const off = !state.forecastVisible[m.key] ? 'off' : '';
+      html += `<label class="chip line ${off}" data-key="${m.key}"><input type="checkbox" ${state.forecastVisible[m.key]?'checked':''}><span class="swatch" style="background:${m.color}"></span>${m.label}</label>`;
+    });
+    el.innerHTML = html;
+    el.querySelectorAll('.chip').forEach(chip=>{
+      chip.addEventListener('click', ()=>{
+        const key = chip.dataset.key;
+        if(key==='__true') return;
+        state.forecastVisible[key] = !state.forecastVisible[key];
+        chip.classList.toggle('off', !state.forecastVisible[key]);
+        const cb = chip.querySelector('input'); if(cb) cb.checked = state.forecastVisible[key];
+        drawForecastChart();
+      });
+    });
+  }
+
+  function renderForecastTable(){
+    const res = state.forecast.result;
+    const panel = document.getElementById('forecastTablePanel');
+    const caption = document.getElementById('forecastCaption');
+    if(!res || res.mode!=='validate'){
+      panel.style.display = 'none';
+      caption.textContent = res && res.mode==='extend'
+        ? `Forecasting ${res.H} steps beyond your last known point — dashed lines are unverified extrapolation, since there's nothing left to check them against.`
+        : '';
+      return;
+    }
+    panel.style.display = '';
+    const tbody = document.querySelector('#forecastTable tbody');
+    const rows = FORECAST_META.map(m=>({...m, ...res.metricsPerMethod[m.key]}));
+    rows.sort((a,b)=>a.rmse-b.rmse);
+    caption.textContent = `Best this run: ${rows[0].label} (RMSE ${fmt(rows[0].rmse)}, MAPE ${Number.isFinite(rows[0].mape)?rows[0].mape.toFixed(1):'—'}%) over the held-out last ${res.H} points, ranked by RMSE.`;
+    tbody.innerHTML = rows.map((r,i)=>`
+      <tr class="${i===0?'best':''}">
+        <td><span class="rank-badge">${i+1}</span></td>
+        <td class="method-name"><span class="swatch" style="background:${r.color}"></span>${r.label}</td>
+        <td class="num">${fmt(r.rmse)}</td>
+        <td class="num">${fmt(r.mae)}</td>
+        <td class="num">${Number.isFinite(r.mape)?r.mape.toFixed(1)+'%':'—'}</td>
+      </tr>`).join('');
+  }
+
+  const forecastCanvas = document.getElementById('forecastChart');
+  const forecastCtx = forecastCanvas.getContext('2d');
+  let forecastDims = {w:0,h:0,dpr:1};
+  function layoutForecastCanvas(){
+    const rect = forecastCanvas.getBoundingClientRect();
+    const dpr = Math.min(window.devicePixelRatio||1,2);
+    const w=Math.max(1,Math.round(rect.width*dpr)), h=Math.max(1,Math.round(rect.height*dpr));
+    if(forecastDims.w!==w||forecastDims.h!==h){ forecastCanvas.width=w; forecastCanvas.height=h; forecastDims={w,h,dpr}; }
+  }
+  function drawForecastChart(){
+    layoutForecastCanvas();
+    const w=forecastDims.w, h=forecastDims.h, ctx=forecastCtx, dpr=forecastDims.dpr;
+    ctx.clearRect(0,0,w,h);
+    const pl=48*dpr, pr=16*dpr, pt=14*dpr, pb=26*dpr;
+    const x0=pl,x1=w-pr,y0=pt,y1=h-pb;
+    const grid = getComputedStyle(document.documentElement).getPropertyValue('--grid')||'#2c2c2a';
+    const axis = getComputedStyle(document.documentElement).getPropertyValue('--axis')||'#454541';
+    const muted = getComputedStyle(document.documentElement).getPropertyValue('--ink-muted')||'#898781';
+    ctx.font = `${11*dpr}px "IBM Plex Mono", monospace`;
+    ctx.strokeStyle = axis; ctx.beginPath(); ctx.moveTo(x0,y0); ctx.lineTo(x0,y1); ctx.lineTo(x1,y1); ctx.stroke();
+    const res = state.forecast.result;
+    if(!res){
+      ctx.fillStyle = muted;
+      ctx.fillText('Paste data and click "Learn & forecast" to see this chart.', x0+8, (y0+y1)/2);
+      return;
+    }
+    const {raw, trainLen, H, mode, seriesForecast} = res;
+    const totalLen = trainLen+H;
+    let vmin=Math.min(...raw), vmax=Math.max(...raw);
+    Object.values(seriesForecast).forEach(arr=>arr.forEach(v=>{ if(Number.isFinite(v)){ vmin=Math.min(vmin,v); vmax=Math.max(vmax,v); } }));
+    const pad=(vmax-vmin)*0.12||1;
+    vmin-=pad; vmax+=pad;
+    const X = i=> lerp(x0,x1, i/Math.max(1,totalLen-1));
+    const Y = v=> lerp(y1,y0, clamp((v-vmin)/(vmax-vmin),0,1));
+
+    ctx.strokeStyle = grid;
+    for(let k=0;k<=4;k++){
+      const vv = lerp(vmin,vmax,k/4);
+      ctx.beginPath(); ctx.moveTo(x0,Y(vv)); ctx.lineTo(x1,Y(vv)); ctx.stroke();
+      ctx.fillStyle = muted; ctx.fillText(fmt(vv,1), 4*dpr, Y(vv)+4*dpr);
+    }
+
+    function strokeSeries(xs, ys, color, width, dash){
+      ctx.beginPath(); ctx.setLineDash(dash||[]);
+      ctx.strokeStyle = resolveColor(color); ctx.lineWidth = width*dpr;
+      let started=false;
+      for(let k=0;k<xs.length;k++){
+        const yv = ys[k];
+        if(!Number.isFinite(yv)){ started=false; continue; }
+        const px=X(xs[k]), py=Y(yv);
+        if(!started){ ctx.moveTo(px,py); started=true; } else ctx.lineTo(px,py);
+      }
+      ctx.stroke(); ctx.setLineDash([]);
+    }
+
+    strokeSeries(raw.map((_,i)=>i).slice(0,trainLen), raw.slice(0,trainLen), 'var(--true-line)', 1.8, []);
+    if(mode==='validate'){
+      const testIdx = Array.from({length:H},(_,k)=>trainLen+k);
+      strokeSeries(testIdx, raw.slice(trainLen), 'var(--true-line)', 1.8, [5*dpr,4*dpr]);
+    }
+    const fIdx = Array.from({length:H},(_,k)=>trainLen+k);
+    FORECAST_META.forEach(m=>{
+      if(!state.forecastVisible[m.key]) return;
+      strokeSeries(fIdx, seriesForecast[m.key], m.color, m.key==='reservoir'?2.4:1.7, mode==='extend'?[4*dpr,3*dpr]:[]);
+    });
+
+    const bx = X(trainLen-1);
+    ctx.strokeStyle = resolveColor('var(--ink)');
+    ctx.globalAlpha = 0.4;
+    ctx.beginPath(); ctx.moveTo(bx,y0); ctx.lineTo(bx,y1); ctx.stroke();
+    ctx.globalAlpha = 1;
+
+    if(state.task==='forecast' && state.forecast.trace){
+      const idx = clamp(Math.floor(state.playhead), 0, totalLen-1);
+      const px = X(idx);
+      ctx.strokeStyle = resolveColor('var(--accent-2)');
+      ctx.globalAlpha = 0.55;
+      ctx.beginPath(); ctx.moveTo(px,y0); ctx.lineTo(px,y1); ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+  }
+  forecastCanvas.addEventListener('mousemove', (e)=>{
+    const res = state.forecast.result;
+    if(!res) return;
+    const rect = forecastCanvas.getBoundingClientRect();
+    const dpr = forecastDims.dpr;
+    const mx = (e.clientX-rect.left)*dpr;
+    const pl=48*dpr, pr=16*dpr, x0=pl, x1=forecastDims.w-pr;
+    const totalLen = res.trainLen+res.H;
+    const idx = clamp(Math.round(((mx-x0)/(x1-x0))*(totalLen-1)), 0, totalLen-1);
+    const tt = document.getElementById('forecastTooltip');
+    const lines = [`<div class="row"><b>step ${idx}</b></div>`];
+    if(idx < res.raw.length) lines.push(`<div class="row"><span class="dot" style="background:var(--true-line)"></span>actual ${fmt(res.raw[idx],2)}</div>`);
+    if(idx >= res.trainLen){
+      const h = idx-res.trainLen;
+      FORECAST_META.forEach(m=>{
+        if(!state.forecastVisible[m.key]) return;
+        lines.push(`<div class="row"><span class="dot" style="background:${m.color}"></span>${m.label} ${fmt(res.seriesForecast[m.key][h],2)}</div>`);
+      });
+    }
+    tt.innerHTML = lines.join('');
+    tt.style.opacity = 1;
+    const wrap = forecastCanvas.parentElement.getBoundingClientRect();
+    let left = e.clientX-wrap.left+14, top = e.clientY-wrap.top+14;
+    tt.style.left = Math.min(left, wrap.width-180)+'px';
+    tt.style.top = Math.min(top, wrap.height-100)+'px';
+  });
+  forecastCanvas.addEventListener('mouseleave', ()=>{ document.getElementById('forecastTooltip').style.opacity=0; });
+
   const state = {
-    task: 'bike',
+    task: 'forecast',
     seed: 1234,
     func: 'sine',
     N: 220, rho: 1.0, leak: 0.08, gain: 1.2, nTrain: 16, noise: 0.06,
@@ -949,6 +1318,8 @@
     yDomain: [-1.3, 1.3],
     hoverNeuron: -1,
     bike: freshBikeState(28),
+    forecast: { mode:'validate', horizonPct:20, trace:null, result:null },
+    forecastVisible: { reservoir:true, persistence:true, linear:true, holt:true },
   };
 
   const METHOD_META = [
@@ -970,8 +1341,10 @@
     drawBikeChart();
     if(state.task==='interp'){
       runExperiment(false);
-    } else {
+    } else if(state.task==='bike'){
       watchRun(true);
+    } else {
+      runForecastPipeline();
     }
   }
 
@@ -1533,12 +1906,18 @@
       const ready = !!state.statesAll;
       scrub.disabled = !ready; playBtn.disabled = !ready;
       if(!ready) document.getElementById('playheadReadout').textContent = 'Run the simulation first';
-    } else {
+    } else if(state.task==='bike'){
       const tr = state.bike.lastTrace;
       scrub.max = tr ? Math.max(0,tr.length-1) : 0;
       const ready = !!tr;
       scrub.disabled = !ready; playBtn.disabled = !ready;
       if(!ready) document.getElementById('playheadReadout').textContent = 'Press "Watch best run" to see it ride';
+    } else {
+      const tr = state.forecast.trace;
+      scrub.max = tr ? Math.max(0,tr.length-1) : 0;
+      const ready = !!tr;
+      scrub.disabled = !ready; playBtn.disabled = !ready;
+      if(!ready) document.getElementById('playheadReadout').textContent = 'Click "Learn & forecast" first';
     }
   }
 
@@ -1580,19 +1959,44 @@
     updateBikeStatsUI(); drawBikeChart(); refreshToolbarForTask();
   });
 
+  document.getElementById('exampleTrendBtn').addEventListener('click', ()=>{
+    document.getElementById('seriesInput').value = exampleTrendSeasonal().join(', ');
+  });
+  document.getElementById('exampleWalkBtn').addEventListener('click', ()=>{
+    document.getElementById('seriesInput').value = exampleNoisyWalk().join(', ');
+  });
+  const modeValidateBtn = document.getElementById('modeValidateBtn');
+  const modeExtendBtn = document.getElementById('modeExtendBtn');
+  const modeHint = document.getElementById('modeHint');
+  function setForecastMode(mode){
+    state.forecast.mode = mode;
+    modeValidateBtn.className = mode==='validate' ? 'btn btn-primary' : 'btn btn-ghost';
+    modeExtendBtn.className = mode==='extend' ? 'btn btn-primary' : 'btn btn-ghost';
+    modeHint.textContent = mode==='validate'
+      ? "Holds back the last stretch of your data, learns from the rest, and checks its guess against what actually happened."
+      : "Learns from everything you pasted, then keeps going past the end of it — there's nothing to check this against, so treat it as a hypothesis.";
+  }
+  modeValidateBtn.addEventListener('click', ()=> setForecastMode('validate'));
+  modeExtendBtn.addEventListener('click', ()=> setForecastMode('extend'));
+  bindSlider('sHorizon','vHorizon', v=>state.forecast.horizonPct=v, 0, null, '%');
+  document.getElementById('forecastBtn').addEventListener('click', ()=>{ if(state.net) runForecastPipeline(); });
+
   const tabs = document.querySelectorAll('.task-tab');
-  const panelBike = document.getElementById('panel-bike');
-  const panelInterp = document.getElementById('panel-interp');
+  const taskPanels = {
+    bike: document.getElementById('panel-bike'),
+    interp: document.getElementById('panel-interp'),
+    forecast: document.getElementById('panel-forecast'),
+  };
   tabs.forEach(tab=>{
     tab.addEventListener('click', ()=>{
       const task = tab.dataset.task;
       if(task===state.task) return;
       state.task = task;
       tabs.forEach(t=>t.classList.toggle('active', t===tab));
-      panelBike.style.display = task==='bike' ? '' : 'none';
-      panelInterp.style.display = task==='interp' ? '' : 'none';
+      Object.keys(taskPanels).forEach(k=>{ taskPanels[k].style.display = k===task ? '' : 'none'; });
       state.playing = false;
       if(task==='interp' && !state.statesAll) runExperiment(false);
+      if(task==='forecast' && !state.forecast.result) runForecastPipeline();
       refreshToolbarForTask();
       layoutBrainCanvas(true);
     });
@@ -1656,8 +2060,8 @@
   });
 
   window.addEventListener('resize', ()=>{
-    layoutBrainCanvas(true); layoutResultsCanvas(); layoutChaosCanvas(); layoutBikeCanvas(); layoutBikeChart(); redrawDraw();
-    drawResultsChart(); if(chaosData) drawChaosChart(); drawBikeChart();
+    layoutBrainCanvas(true); layoutResultsCanvas(); layoutChaosCanvas(); layoutBikeCanvas(); layoutBikeChart(); layoutForecastCanvas(); redrawDraw();
+    drawResultsChart(); if(chaosData) drawChaosChart(); drawBikeChart(); drawForecastChart();
   });
 
   function tickInterp(now){
@@ -1709,20 +2113,44 @@
       updateBikeTelemetry(0, idleTheta, 'idle', resolveColor('var(--ink-muted)'));
     }
   }
+  function tickForecast(now){
+    const trace = state.forecast.trace;
+    if(trace && trace.length){
+      if(state.playing){
+        state.playhead += Math.max(0, now-lastT)*0.001*state.playSpeed*90;
+        if(state.playhead>=trace.length){ state.playhead = trace.length-1; state.playing=false; playBtn.textContent='▶'; }
+      }
+      const idx = clamp(Math.floor(state.playhead), 0, trace.length-1);
+      scrub.value = idx;
+      const frame = trace[idx];
+      drawBrain(frame.state, now);
+      document.getElementById('playheadReadout').textContent = frame.isForecast
+        ? `step ${frame.idx} — forecast ${fmt(frame.predicted,2)}`
+        : `step ${frame.idx} — value ${fmt(frame.value,2)}`;
+      drawForecastChart();
+    } else {
+      drawBrain(null, now);
+    }
+  }
 
   let lastT = performance.now();
   function tick(now){
     const dt = Math.max(0, now-lastT);
-    if(state.task==='interp') tickInterp(now); else tickBike(now, dt);
+    if(state.task==='interp') tickInterp(now);
+    else if(state.task==='bike') tickBike(now, dt);
+    else tickForecast(now);
     lastT = now;
     requestAnimationFrame(tick);
   }
 
   playBtn.textContent = state.playing ? '❚❚' : '▶';
   redrawDraw();
-  panelInterp.style.display = 'none';
+  taskPanels.bike.style.display = 'none';
+  taskPanels.interp.style.display = 'none';
+  document.getElementById('seriesInput').value = exampleTrendSeasonal().join(', ');
   rebuildBrain(state.seed);
   requestAnimationFrame(tick);
   drawChaosChart();
+  drawBikeChart();
 })();
 </script>
