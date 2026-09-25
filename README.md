@@ -1,9 +1,9 @@
 # FlyBrain Reservoir
 
 An interactive reservoir computer modeled on the topology of the fly connectome. The same circuit can be
-given different jobs: it now learns to balance a bicycle from scratch through trial and reward, or it can
-interpolate arbitrary functions from sparse, noisy samples and get benchmarked live against classical
-interpolation methods (linear, cubic spline, polynomial, Gaussian RBF, k-NN).
+given different jobs: paste in a real sequence of numbers and it learns the trend and predicts what comes
+next, it learns to balance a bicycle from scratch through trial and reward, or it can interpolate arbitrary
+functions from sparse, noisy samples and get benchmarked live against classical methods.
 
 Live artifact: https://claude.ai/artifact/LDCQSH9521hbgqkHoBJRip
 
@@ -33,15 +33,25 @@ project descending into a modeled ventral nerve cord, and it's that nerve cord's
 population of motor neurons that produces the final output. Only those nerve-cord synapses ever change;
 everything upstream of them stays fixed.
 
-The app currently offers two tasks built on that same substrate:
+The app currently offers three tasks built on that same substrate:
 
-- **Ride a bicycle** (the flagship task, and the one that learns *over time*): a simplified lean-and-steer
-  bicycle model that falls over unless something actively corrects it. The brain feels the lean angle and
-  lean rate and outputs a single steering torque via its nerve-cord motor neurons. Those readout weights
-  are trained across many attempts with an OpenAI-ES-style evolution strategy — each generation perturbs
-  the weights several ways, runs one episode per perturbation, and moves the weights toward whichever
-  variants survived longest and stayed most upright. A live learning-curve chart plots survival time per
-  generation so you can watch it improve from a few seconds to a full, uncrashed run.
+- **Forecast a trend** (the flagship task, and the only one that runs on data you bring): paste any ordered
+  sequence of real numbers — sales, prices, sensor readings, anything evenly spaced. Each value feeds into
+  the reservoir one step at a time alongside a normalized time index (so both trend and seasonality are
+  learnable, since the time index is always known even for future steps), and a ridge-regression readout
+  learns to predict the next value. In "Validate accuracy" mode it holds back the last stretch of your data
+  and grades its forecast against what actually happened (RMSE / MAE / MAPE); in "Predict what's next" it
+  trains on everything and forecasts new points past the end, feeding its own predictions back in as it
+  goes. It's benchmarked against three classical forecasting baselines — persistence, linear-trend
+  extrapolation, and Holt's linear exponential smoothing — and genuinely loses to them on cleanly linear
+  data and wins on noisy/nonlinear series, which is the honest result.
+- **Ride a bicycle** (the one that learns *over time*): a simplified lean-and-steer bicycle model that
+  falls over unless something actively corrects it. The brain feels the lean angle and lean rate and
+  outputs a single steering torque via its nerve-cord motor neurons. Those readout weights are trained
+  across many attempts with an OpenAI-ES-style evolution strategy — each generation perturbs the weights
+  several ways, runs one episode per perturbation, and moves the weights toward whichever variants survived
+  longest and stayed most upright. A live learning-curve chart plots survival time per generation so you
+  can watch it improve from a few seconds to a full, uncrashed run.
 - **Interpolate a function**: the original task. A scalar input — think of it as a position swept across
   the fly's compound eye — drives the reservoir once, and a ridge-regression readout is trained on a
   handful of labeled, noisy moments from that sweep to reconstruct the target function everywhere else.
@@ -50,8 +60,8 @@ The app currently offers two tasks built on that same substrate:
   the brain's connection strengths across a range of spectral radii — reproducing reservoir computing's
   signature result that performance peaks at the boundary between ordered and chaotic dynamics.
 
-Brain size, spectral radius, leak rate and input gain are shared across both tasks — it's genuinely the
-same circuit doing two different jobs, not two separate simulations.
+Brain size, spectral radius, leak rate and input gain are shared across all three tasks — it's genuinely
+the same circuit doing three different jobs, not three separate simulations.
 
 ## Running it
 
