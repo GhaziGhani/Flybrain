@@ -1,0 +1,58 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "FlyBridge: simulated Arduino (train)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "flybridge",
+      "args": ["--sim"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "FlyBridge: real Arduino (train)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "flybridge",
+      "args": ["--port", "${input:port}"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "FlyBridge: real Arduino (run what it learned)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "flybridge",
+      "args": ["--port", "${input:port}", "--mode", "run"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "FlyBridge: innate giant-fiber reflex (no training)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "flybridge",
+      "args": ["--sim", "--mode", "innate"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "FlyBridge: list serial ports",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "flybridge",
+      "args": ["--list-ports"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    }
+  ],
+  "inputs": [
+    {
+      "id": "port",
+      "type": "promptString",
+      "description": "Arduino serial port (e.g. COM5 on Windows, /dev/ttyACM0 on Linux, /dev/cu.usbmodem* on macOS)",
+      "default": "COM5"
+    }
+  ]
+}

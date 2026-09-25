@@ -67,3 +67,13 @@ the same circuit doing three different jobs, not three separate simulations.
 
 It's a single static HTML file with no build step and no external dependencies beyond two Google Fonts
 links — open `index.html` directly in a browser, or serve the directory with any static file server.
+
+## Hardware: a real fly brain driving an Arduino
+
+[`hardware/`](hardware/README.md) takes this off the screen. An Arduino streams an ultrasonic
+sensor to the PC, where the complete MaleCNS connectome (166,700 real neurons, via the
+[`flybrain`](https://pypi.org/project/flybrain/) library) sees the reading as a looming stimulus on
+its LPLC2/LC4 looming detectors. A readout from its 708 real VNC motor neurons decides whether to
+switch an LED on, and the brain learns what its motor output should mean from dopamine: its own
+PAM neurons for reward, PPL1 neurons for punishment. See [hardware/README.md](hardware/README.md)
+for wiring, setup, measured results and the serial protocol.
