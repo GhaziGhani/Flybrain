@@ -16,7 +16,7 @@ for f in $D/updates.20110127.*.bz2; do $BGPDUMP -q -m "$f"; done \
 cat $R/updates_summary.txt
 
 echo "### 2.3.3 RIB + updates -> cumulative Egyptian withdrawals"
-{ $BGPDUMP -q -m $D/rib.20110127.2000.bz2
+{ $BGPDUMP -q -m $D/rib.20110127.1919.bz2
   for f in $D/updates.20110127.*.bz2; do $BGPDUMP -q -m "$f"; done
 } | tools/egypt_parse > $R/egypt_withdrawals.dat 2> $R/egypt_summary.txt
 cat $R/egypt_summary.txt

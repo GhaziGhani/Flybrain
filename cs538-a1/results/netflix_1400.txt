@@ -1,0 +1,2 @@
+prefix 198.45.49.0/24: 2 RIB entries, 1 distinct AS paths
+  len= 3  x2  37271 6762 2906

@@ -1,0 +1,4 @@
+interesting (Egyptian) prefixes: 2526
+update messages: 1680323  (withdrawals: 235491)
+first=1296161454 last=1296169669  avg rate=204.54 updates/s
+Egyptian withdrawals: 129057

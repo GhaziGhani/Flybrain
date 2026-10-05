@@ -3,7 +3,7 @@
 # RIBs are dumped every 2 hours; update files cover 15 minutes each.
 set -euo pipefail
 cd "$(dirname "$0")/../data"
-BASE=http://archive.routeviews.org/route-views.linx/bgpdata
+BASE=https://archive.routeviews.org/route-views.linx/bgpdata
 
 get() { [ -s "$(basename "$1")" ] || curl -fSLO --retry 3 "$BASE/$1"; }
 
@@ -11,11 +11,10 @@ get() { [ -s "$(basename "$1")" ] || curl -fSLO --retry 3 "$BASE/$1"; }
 get 2017.11/RIBS/rib.20171106.1400.bz2
 get 2017.11/RIBS/rib.20171106.1800.bz2
 
-# 2.3 Egypt: RIB just before the shutdown, plus updates 21:00-22:45 (covers 21:00-23:00)
-get 2011.01/RIBS/rib.20110127.2000.bz2
-for hh in 21 22; do
-  for mm in 00 15 30 45; do
-    get 2011.01/UPDATES/updates.20110127.$hh$mm.bz2
-  done
+# 2.3 Egypt: last RIB before the shutdown (19:19), plus every update file
+# covering 21:00-23:00. In 2011 LINX file times were not on round minutes.
+get 2011.01/RIBS/rib.20110127.1919.bz2
+for t in 2050 2105 2122 2137 2152 2207 2222 2237 2252; do
+  get 2011.01/UPDATES/updates.20110127.$t.bz2
 done
 ls -lh
