@@ -18,7 +18,8 @@ LINX collector (`route-views.linx`).
 
 ```bash
 git clone --depth 1 https://github.com/RIPE-NCC/bgpdump.git tools/bgpdump
-(cd tools/bgpdump && ./bootstrap.sh && make)
+# NDEBUG: a 2011 update trips an AGGREGATOR-ordering assert that is irrelevant here
+(cd tools/bgpdump && ./bootstrap.sh && make CFLAGS="-O2 -DNDEBUG")
 gcc -O2 -Wall -o tools/egypt_parse tools/egypt_parse.c
 pip install matplotlib
 tools/fetch_data.sh      # needs access to archive.routeviews.org
